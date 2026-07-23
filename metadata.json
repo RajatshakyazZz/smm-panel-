@@ -1,0 +1,6 @@
+{
+  "name": "MyFame SMM Panel - Premium Indian SMM Supplier",
+  "description": "Professional Full-Stack Indian SMM Panel powered by FameProvider API with INR currency, automatic price syncing, Indian payment gateways, order management, tickets, and user/admin controls.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
