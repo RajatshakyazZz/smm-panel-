@@ -14,6 +14,7 @@ import {
 } from './types';
 import { FameProviderClient, FameProviderService } from './fameprovider-api';
 import { isSupabaseConfigured, getSupabaseAdmin } from './supabase';
+import { isFirebaseConfigured, getFirebaseAdminDb } from './firebase';
 
 interface DBData {
   users: User[];
@@ -460,14 +461,34 @@ class SMMDatabase {
     try {
       fs.writeFileSync(DB_FILE, JSON.stringify(this.data, null, 2), 'utf-8');
       
-      // Async sync to Supabase if credentials are sets
+      // Async sync to Supabase if credentials are set
       if (isSupabaseConfigured()) {
         this.syncToSupabase().catch((err) => {
           console.error('[DB] Supabase sync background error:', err);
         });
       }
+
+      // Async sync to Firebase Firestore if configured
+      if (isFirebaseConfigured()) {
+        this.syncToFirebase().catch((err) => {
+          console.error('[DB] Firebase sync background error:', err);
+        });
+      }
     } catch (err) {
       console.error('[DB] Save error:', err);
+    }
+  }
+
+  private async syncToFirebase() {
+    try {
+      const db = getFirebaseAdminDb();
+      const settings = this.getSettings();
+      await db.collection('settings').doc('default').set({
+        ...settings,
+        updatedAt: new Date().toISOString(),
+      }, { merge: true });
+    } catch (err) {
+      console.error('[DB] Firebase sync failed:', err);
     }
   }
 
