@@ -63,6 +63,9 @@ export interface SMMOrder {
   startCount: number;
   remains: number;
   status: OrderStatus;
+  isProviderDispatched?: boolean;
+  providerResponseNote?: string;
+  providerError?: string;
   refillId?: string;
   refillStatus?: string;
   createdAt: string;

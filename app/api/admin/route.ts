@@ -62,6 +62,41 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ logs: db.getLogs() });
     }
 
+    if (action === 'test_provider_api') {
+      const apiKeyToTest = searchParams.get('key') || settings.fameProviderApiKey;
+      const apiUrlToTest = searchParams.get('url') || settings.fameProviderApiUrl;
+      const client = new FameProviderClient(apiUrlToTest, apiKeyToTest);
+
+      try {
+        const bal = await client.getBalance();
+        if (bal && bal.balance !== undefined) {
+          const balUSD = parseFloat(bal.balance) || 0;
+          const balINR = (balUSD * settings.usdToInrRate).toFixed(2);
+          return NextResponse.json({
+            success: true,
+            balanceUSD: balUSD,
+            balanceINR: balINR,
+            currency: bal.currency || 'USD',
+            isDemoKey: apiKeyToTest.includes('demo'),
+            message: `Connected successfully! Provider Account Balance: $${balUSD} (₹${balINR})`,
+          });
+        } else {
+          return NextResponse.json({
+            success: false,
+            error: 'Provider API returned error or invalid API Key',
+            isDemoKey: apiKeyToTest.includes('demo'),
+          });
+        }
+      } catch (err: unknown) {
+        const errMsg = err instanceof Error ? err.message : 'Connection error';
+        return NextResponse.json({
+          success: false,
+          error: errMsg,
+          isDemoKey: apiKeyToTest.includes('demo'),
+        });
+      }
+    }
+
     return NextResponse.json({
       settings,
       priceAlerts: db.getPriceAlerts(),
@@ -125,6 +160,15 @@ export async function POST(req: NextRequest) {
         db.resolvePriceAlert(alertId);
         return NextResponse.json({ success: true });
       }
+    }
+
+    if (action === 'resend_order') {
+      const { orderId } = body;
+      if (!orderId) {
+        return NextResponse.json({ error: 'orderId is required' }, { status: 400 });
+      }
+      const resendRes = await db.resendOrderToFameProvider(orderId);
+      return NextResponse.json(resendRes);
     }
 
     return NextResponse.json({ error: 'Invalid admin action' }, { status: 400 });

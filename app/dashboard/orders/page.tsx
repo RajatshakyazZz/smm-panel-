@@ -170,17 +170,28 @@ export default function OrderHistoryPage() {
                           {ord.startCount} / {ord.remains}
                         </td>
                         <td className="py-3.5 px-4">
-                          <span
-                            className={`rounded px-2.5 py-1 text-[10px] font-bold ${
-                              ord.status === 'Completed'
-                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                                : ord.status === 'In progress' || ord.status === 'Processing'
-                                ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-                                : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                            }`}
-                          >
-                            {ord.status}
-                          </span>
+                          <div className="flex flex-col gap-1">
+                            <span
+                              className={`rounded px-2.5 py-0.5 text-[10px] font-bold inline-block w-max ${
+                                ord.status === 'Completed'
+                                  ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                                  : ord.status === 'In progress' || ord.status === 'Processing'
+                                  ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                                  : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                              }`}
+                            >
+                              {ord.status}
+                            </span>
+                            {ord.isProviderDispatched ? (
+                              <span className="text-[10px] text-emerald-400/90 font-mono flex items-center gap-1">
+                                <CheckCircle2 className="h-3 w-3" /> Provider Order #{ord.providerOrderId}
+                              </span>
+                            ) : (
+                              <span className="text-[10px] text-amber-400/90 font-medium">
+                                Queued (Processing)
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="py-3.5 px-4 text-right">
                           {ord.status === 'Completed' ? (

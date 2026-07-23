@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import LandingHeader from '@/components/LandingHeader';
 import LandingHero from '@/components/LandingHero';
+import LandingServicesSection from '@/components/LandingServicesSection';
 import LandingFeatures from '@/components/LandingFeatures';
 import LandingFAQ from '@/components/LandingFAQ';
 import FloatingSupportWidgets from '@/components/FloatingSupportWidgets';
@@ -24,6 +25,7 @@ export default function HomePage() {
       <LandingHeader onOpenAuthModal={() => router.push('/login')} />
       <main>
         <LandingHero onLoginSuccess={handleLoginSuccess} />
+        <LandingServicesSection />
         <LandingFeatures />
         <LandingFAQ />
       </main>
@@ -34,7 +36,7 @@ export default function HomePage() {
           <p>© 2026 FameProvider. All Rights Reserved. Premier Indian SMM Panel.</p>
           <div className="flex gap-4">
             <a href="#features" className="hover:text-slate-300">Why Us</a>
-            <a href="#how-it-works" className="hover:text-slate-300">How It Works</a>
+            <a href="#services" className="hover:text-slate-300">Services</a>
             <a href="#faqs" className="hover:text-slate-300">Terms & Privacy</a>
           </div>
         </div>
@@ -44,3 +46,4 @@ export default function HomePage() {
     </div>
   );
 }
+

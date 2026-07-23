@@ -14,7 +14,6 @@ import {
 } from './types';
 import { FameProviderClient, FameProviderService } from './fameprovider-api';
 import { isSupabaseConfigured, getSupabaseAdmin } from './supabase';
-import { isFirebaseConfigured, getFirebaseAdminDb } from './firebase';
 
 interface DBData {
   users: User[];
@@ -461,34 +460,14 @@ class SMMDatabase {
     try {
       fs.writeFileSync(DB_FILE, JSON.stringify(this.data, null, 2), 'utf-8');
       
-      // Async sync to Supabase if credentials are set
+      // Async sync to Supabase if credentials are sets
       if (isSupabaseConfigured()) {
         this.syncToSupabase().catch((err) => {
           console.error('[DB] Supabase sync background error:', err);
         });
       }
-
-      // Async sync to Firebase Firestore if configured
-      if (isFirebaseConfigured()) {
-        this.syncToFirebase().catch((err) => {
-          console.error('[DB] Firebase sync background error:', err);
-        });
-      }
     } catch (err) {
       console.error('[DB] Save error:', err);
-    }
-  }
-
-  private async syncToFirebase() {
-    try {
-      const db = getFirebaseAdminDb();
-      const settings = this.getSettings();
-      await db.collection('settings').doc('default').set({
-        ...settings,
-        updatedAt: new Date().toISOString(),
-      }, { merge: true });
-    } catch (err) {
-      console.error('[DB] Firebase sync failed:', err);
     }
   }
 
@@ -795,20 +774,36 @@ class SMMDatabase {
 
     // Send order to FameProvider API
     const settings = this.getSettings();
+    const isDemoKey = !settings.fameProviderApiKey || settings.fameProviderApiKey.includes('demo');
     const client = new FameProviderClient(settings.fameProviderApiUrl, settings.fameProviderApiKey);
-    const providerRes = await client.addOrder({
-      service: service.providerServiceId,
-      link,
-      quantity,
-    });
+    
+    let providerRes: { order?: number; error?: string } | null = null;
+    try {
+      providerRes = await client.addOrder({
+        service: service.providerServiceId,
+        link,
+        quantity,
+      });
+    } catch (e) {
+      console.error('[DB] FameProvider addOrder API error:', e);
+    }
 
     let providerOrderId: number | undefined = providerRes?.order;
-    let initialStatus: SMMOrder['status'] = providerOrderId ? 'Pending' : 'Processing';
+    let isProviderDispatched = false;
+    let providerResponseNote = '';
+    let providerError = '';
 
-    // Mock provider fallback ID if API is in demo key mode
-    if (!providerOrderId) {
+    if (providerOrderId) {
+      isProviderDispatched = true;
+      providerResponseNote = `Successfully dispatched to FameProvider API (Order #${providerOrderId})`;
+      this.addLog('PROVIDER_API', 'success', `Order dispatched to FameProvider API: Order #${providerOrderId} for service #${service.providerServiceId}`);
+    } else {
+      isProviderDispatched = false;
+      providerError = providerRes?.error || (isDemoKey ? 'Provider API Key is set to Demo Mode' : 'Provider API connection / authorization error');
+      providerResponseNote = `Provider Dispatch Pending: ${providerError}. (Set live FameProvider API key in Admin Settings)`;
+      // Generate placeholder local order ID for internal tracking
       providerOrderId = Math.floor(100000 + Math.random() * 899999);
-      initialStatus = 'Pending';
+      this.addLog('PROVIDER_API', 'warning', `Order #${service.providerServiceId} created locally, but FameProvider API dispatch failed: ${providerError}`);
     }
 
     const newOrder: SMMOrder = {
@@ -827,16 +822,66 @@ class SMMDatabase {
       profitINR,
       startCount: Math.floor(Math.random() * 500) + 100,
       remains: quantity,
-      status: initialStatus,
+      status: 'Pending',
+      isProviderDispatched,
+      providerResponseNote,
+      providerError: isProviderDispatched ? undefined : providerError,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
 
     this.data.orders.push(newOrder);
-    this.addLog('ORDER', 'success', `Order #${newOrder.id} created by ${user.username} for \u20B9${chargeINR}`);
+    this.addLog('ORDER', 'success', `Order #${newOrder.id} created by ${user.username} for ₹${chargeINR}. Dispatched to Provider: ${isProviderDispatched}`);
     this.saveToDisk();
 
     return { order: newOrder };
+  }
+
+  /**
+   * Re-send/Push an un-dispatched order to FameProvider API
+   */
+  async resendOrderToFameProvider(orderId: string): Promise<{ success: boolean; providerOrderId?: number; error?: string }> {
+    const order = this.data.orders.find((o) => o.id === orderId || o.providerOrderId?.toString() === orderId);
+    if (!order) return { success: false, error: 'Order not found' };
+
+    const service = this.getServiceById(order.serviceId);
+    if (!service) return { success: false, error: 'Associated service not found' };
+
+    const settings = this.getSettings();
+    const client = new FameProviderClient(settings.fameProviderApiUrl, settings.fameProviderApiKey);
+
+    try {
+      const res = await client.addOrder({
+        service: service.providerServiceId,
+        link: order.link,
+        quantity: order.quantity,
+      });
+
+      if (res?.order) {
+        order.providerOrderId = res.order;
+        order.isProviderDispatched = true;
+        order.providerResponseNote = `Dispatched to FameProvider API (Order #${res.order})`;
+        order.providerError = undefined;
+        order.status = 'Pending';
+        order.updatedAt = new Date().toISOString();
+
+        this.addLog('PROVIDER_API', 'success', `Order #${order.id} manually pushed to FameProvider API. Real Order ID: #${res.order}`);
+        this.saveToDisk();
+        return { success: true, providerOrderId: res.order };
+      } else {
+        const err = res?.error || 'Provider returned invalid response or error';
+        order.providerError = err;
+        order.providerResponseNote = `Push failed: ${err}`;
+        order.updatedAt = new Date().toISOString();
+        this.saveToDisk();
+        return { success: false, error: err };
+      }
+    } catch (e: unknown) {
+      const err = e instanceof Error ? e.message : 'Connection error';
+      order.providerError = err;
+      this.saveToDisk();
+      return { success: false, error: err };
+    }
   }
 
   /**
