@@ -967,6 +967,37 @@ class SMMDatabase {
       return { error: `Deposit amount must be between ₹${gw.minAmountINR} and ₹${gw.maxAmountINR}` };
     }
 
+    let finalRef = (customTxRef || '').trim().replace(/\s+/g, '');
+
+    // Strict Anti-Fraud UTR Checks if user provided a custom UTR / Reference
+    if (finalRef) {
+      // 1. Anti-Replay / Duplicate UTR Ledger Protection
+      const existingTx = this.data.transactions.find(
+        (t) => t.transactionRef.toLowerCase() === finalRef.toLowerCase()
+      );
+      if (existingTx) {
+        return {
+          error: `⚠️ Duplicate UTR Blocked! The 12-digit UTR/Ref Number "${finalRef}" has ALREADY been claimed by a user. Reusing UTRs is strictly prohibited.`,
+        };
+      }
+
+      // 2. Strict 12-Digit Format Check (for UPI UTRs)
+      if (!/^\d{12}$/.test(finalRef)) {
+        return {
+          error: `Invalid UTR Format! Bank UPI UTR/Reference Number must be exactly 12 numeric digits (e.g. 423812009845). You entered: "${finalRef}"`,
+        };
+      }
+
+      // 3. Obvious fake patterns block (e.g. 111111111111, 000000000000, 123456789012)
+      if (/^(\d)\1{11}$/.test(finalRef) || finalRef === '123456789012' || finalRef === '987654321098') {
+        return {
+          error: `Invalid UTR Pattern! Please enter a real 12-digit bank transaction UTR number from your payment receipt.`,
+        };
+      }
+    } else {
+      finalRef = 'PAY_' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).substring(2, 5).toUpperCase();
+    }
+
     const feeINR = Number(((amountINR * gw.feePercent) / 100).toFixed(2));
     const netINR = Number((amountINR - feeINR).toFixed(2));
 
@@ -989,15 +1020,15 @@ class SMMDatabase {
       feeINR,
       netINR,
       status,
-      transactionRef: customTxRef || ('PAY_' + Date.now().toString(36).toUpperCase()),
+      transactionRef: finalRef,
       createdAt: new Date().toISOString(),
     };
 
     this.data.transactions.unshift(tx);
     if (needsApproval) {
-      this.addLog('WALLET', 'warning', `Wallet deposit request of ₹${amountINR} (Ref: ${tx.transactionRef}) submitted by ${user.username} - Awaiting Admin UTR Verification`);
+      this.addLog('WALLET', 'warning', `Wallet deposit request of ₹${amountINR} (UTR: ${tx.transactionRef}) submitted by ${user.username} - Awaiting Admin UTR Verification`);
     } else {
-      this.addLog('WALLET', 'success', `Wallet deposit of ₹${amountINR} credited to ${user.username} via ${gw.name}`);
+      this.addLog('WALLET', 'success', `Wallet deposit of ₹${amountINR} (UTR: ${tx.transactionRef}) AUTO-VERIFIED & credited to ${user.username}`);
     }
     this.saveToDisk();
 

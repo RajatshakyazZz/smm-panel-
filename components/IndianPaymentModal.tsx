@@ -88,10 +88,21 @@ export default function IndianPaymentModal({
   };
 
   const handleConfirmUtrPayment = async () => {
-    setLoading(true);
     setError('');
 
-    const cleanUtr = utrInput.trim();
+    const cleanUtr = utrInput.trim().replace(/\s+/g, '');
+
+    if (!cleanUtr) {
+      setError('Please enter the 12-digit UTR/Ref number from your payment app receipt.');
+      return;
+    }
+
+    if (!/^\d{12}$/.test(cleanUtr)) {
+      setError('Invalid UTR! Bank UTR must be exactly 12 numeric digits (e.g. 423812009845).');
+      return;
+    }
+
+    setLoading(true);
 
     try {
       const res = await fetch('/api/wallet', {
@@ -101,7 +112,7 @@ export default function IndianPaymentModal({
           userId,
           gatewayCode: selectedGateway,
           amountINR: parseFloat(amountINR),
-          utr: cleanUtr || ('UTR_' + Date.now().toString().slice(-8)),
+          utr: cleanUtr,
         }),
       });
 
