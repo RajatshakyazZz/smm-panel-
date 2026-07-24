@@ -588,7 +588,7 @@ class SMMDatabase {
     }
     user.updatedAt = new Date().toISOString();
 
-    this.addLog('WALLET', 'info', `Balance adjusted for ${user.username}: ${isCredit ? '+' : '-'}\u20B9${amountINR} (${reason})`);
+    this.addLog('WALLET', 'info', `Balance adjusted for ${user.username}: ${isCredit ? '+' : '-'}₹${amountINR} (${reason})`);
     this.saveToDisk();
     return user;
   }
@@ -660,8 +660,8 @@ class SMMDatabase {
             serviceName: existing.name,
             providerServiceId: pId,
             field: 'price',
-            oldValue: `$${existing.providerRateUSD} (\u20B9${existing.calculatedRateINR})`,
-            newValue: `$${providerRateUSD} (\u20B9${calcINR})`,
+            oldValue: `$${existing.providerRateUSD} (₹${existing.calculatedRateINR})`,
+            newValue: `$${providerRateUSD} (₹${calcINR})`,
             changePercent: changePct,
             isResolved: false,
             createdAt: new Date().toISOString(),
@@ -759,7 +759,7 @@ class SMMDatabase {
     const chargeINR = Number(((service.sellingRateINR * quantity) / 1000).toFixed(2));
     if (user.balanceINR < chargeINR) {
       return {
-        error: `Insufficient Wallet Balance! Required: \u20B9${chargeINR.toFixed(2)}, Available: \u20B9${user.balanceINR.toFixed(2)}. Please recharge your wallet.`,
+        error: `Insufficient Wallet Balance! Required: ₹${chargeINR.toFixed(2)}, Available: ₹${user.balanceINR.toFixed(2)}. Please recharge your wallet.`,
       };
     }
 
@@ -948,7 +948,7 @@ class SMMDatabase {
     if (!gw || !gw.enabled) return { error: 'Payment gateway is disabled' };
 
     if (amountINR < gw.minAmountINR || amountINR > gw.maxAmountINR) {
-      return { error: `Deposit amount must be between \u20B9${gw.minAmountINR} and \u20B9${gw.maxAmountINR}` };
+      return { error: `Deposit amount must be between ₹${gw.minAmountINR} and ₹${gw.maxAmountINR}` };
     }
 
     const feeINR = Number(((amountINR * gw.feePercent) / 100).toFixed(2));
@@ -973,7 +973,7 @@ class SMMDatabase {
     };
 
     this.data.transactions.unshift(tx);
-    this.addLog('WALLET', 'success', `Wallet deposit of \u20B9${amountINR} credited to ${user.username} via ${gw.name}`);
+    this.addLog('WALLET', 'success', `Wallet deposit of ₹${amountINR} credited to ${user.username} via ${gw.name}`);
     this.saveToDisk();
 
     return tx;

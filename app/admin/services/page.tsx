@@ -148,14 +148,14 @@ export default function AdminServicesPage() {
           {/* Global Exchange & Margin Settings Form */}
           <div className="mb-8 rounded-2xl border border-slate-800 bg-slate-900/80 p-6 shadow-xl">
             <h2 className="text-sm font-bold text-white border-b border-slate-800 pb-3 mb-4">
-              Global USD (\u0024) to INR (\u20B9) Exchange Engine
+              Global USD ($) to INR (₹) Exchange Engine
             </h2>
 
             <form onSubmit={handleUpdateGlobalSettings} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1.5">Manual Exchange Rate (1 USD = ? INR)</label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-slate-400 text-xs">\u20B9</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-slate-400 text-xs">₹</span>
                   <input
                     type="number"
                     step="0.01"
@@ -217,8 +217,8 @@ export default function AdminServicesPage() {
                     <th className="py-3.5 px-4">ID</th>
                     <th className="py-3.5 px-4">Service Name</th>
                     <th className="py-3.5 px-4">Provider Rate ($)</th>
-                    <th className="py-3.5 px-4">Cost (\u20B9)</th>
-                    <th className="py-3.5 px-4">Selling Price (\u20B9 / 1K)</th>
+                    <th className="py-3.5 px-4">Cost (₹)</th>
+                    <th className="py-3.5 px-4">Selling Price (₹ / 1K)</th>
                     <th className="py-3.5 px-4">Lock Price</th>
                   </tr>
                 </thead>
@@ -230,8 +230,8 @@ export default function AdminServicesPage() {
                         <span className="font-bold text-white block truncate">{srv.name}</span>
                         <span className="text-[10px] text-slate-400">{srv.category}</span>
                       </td>
-                      <td className="py-3.5 px-4 font-mono text-slate-300">\u0024{srv.providerRateUSD}</td>
-                      <td className="py-3.5 px-4 font-mono text-slate-400">\u20B9{srv.calculatedRateINR.toFixed(2)}</td>
+                      <td className="py-3.5 px-4 font-mono text-slate-300">${srv.providerRateUSD}</td>
+                      <td className="py-3.5 px-4 font-mono text-slate-400">₹{srv.calculatedRateINR.toFixed(2)}</td>
                       <td className="py-3.5 px-4">
                         <input
                           type="number"

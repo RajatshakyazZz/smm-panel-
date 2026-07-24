@@ -83,7 +83,7 @@ export default function MassOrderPage() {
 
       const data = await res.json();
       if (data.success) {
-        setMsg({ type: 'success', text: `Successfully processed ${data.count} mass orders! \u20B9${data.totalSpent} deducted.` });
+        setMsg({ type: 'success', text: `Successfully processed ${data.count} mass orders! ₹${data.totalSpent} deducted.` });
         if (data.totalSpent) {
           setUser({ ...user, balanceINR: user.balanceINR - data.totalSpent, spentINR: user.spentINR + data.totalSpent });
         }

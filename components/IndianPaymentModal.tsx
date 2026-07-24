@@ -71,7 +71,7 @@ export default function IndianPaymentModal({
   const handleProceedPayment = async () => {
     const amt = parseFloat(amountINR);
     if (isNaN(amt) || amt < 10) {
-      setError('Minimum deposit amount is \u20B910');
+      setError('Minimum deposit amount is ₹10');
       return;
     }
 
@@ -135,7 +135,7 @@ export default function IndianPaymentModal({
                 <Wallet className="h-5 w-5" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-white">Add Funds in Indian Rupees (\u20B9)</h3>
+                <h3 className="text-lg font-bold text-white">Add Funds in Indian Rupees (₹)</h3>
                 <p className="text-xs text-slate-400">Official Indian payment gateways with zero fee</p>
               </div>
             </div>
@@ -179,7 +179,7 @@ export default function IndianPaymentModal({
 
             {/* Quick Amount Selector */}
             <div className="mb-5">
-              <label className="block text-xs font-semibold text-slate-300 mb-2">Amount in INR (\u20B9)</label>
+              <label className="block text-xs font-semibold text-slate-300 mb-2">Amount in INR (₹)</label>
               <div className="grid grid-cols-4 gap-2 mb-3">
                 {['100', '250', '500', '1000'].map((val) => (
                   <button
@@ -192,13 +192,13 @@ export default function IndianPaymentModal({
                         : 'border-slate-800 bg-slate-950 text-slate-300 hover:border-slate-700'
                     }`}
                   >
-                    \u20B9{val}
+                    ₹{val}
                   </button>
                 ))}
               </div>
 
               <div className="relative">
-                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-slate-400 text-sm">\u20B9</span>
+                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-slate-400 text-sm">₹</span>
                 <input
                   type="number"
                   min="10"
@@ -215,7 +215,7 @@ export default function IndianPaymentModal({
               onClick={handleProceedPayment}
               className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 py-3 text-sm font-bold text-white shadow-lg shadow-blue-600/25 hover:from-blue-500 hover:to-indigo-500"
             >
-              <span>Proceed to Pay \u20B9{amountINR}</span>
+              <span>Proceed to Pay ₹{amountINR}</span>
               <ArrowRight className="h-4 w-4" />
             </button>
           </div>
@@ -229,7 +229,7 @@ export default function IndianPaymentModal({
               <span>{currentGw.name} Instant UPI Portal</span>
             </div>
 
-            <h3 className="text-lg font-bold text-white">Scan & Pay \u20B9{amountINR}</h3>
+            <h3 className="text-lg font-bold text-white">Scan & Pay ₹{amountINR}</h3>
             <p className="mt-1 text-xs text-slate-400">Open PhonePe, Google Pay, Paytm or BHIM UPI app to scan</p>
 
             {/* Simulated QR Box */}
@@ -279,7 +279,7 @@ export default function IndianPaymentModal({
                 disabled={loading}
                 className="w-1/2 rounded-xl bg-emerald-600 py-2.5 text-xs font-bold text-white shadow-lg shadow-emerald-600/30 hover:bg-emerald-500 disabled:opacity-50"
               >
-                {loading ? 'Verifying UPI...' : 'Simulate Paid \u20B9' + amountINR}
+                {loading ? 'Verifying UPI...' : 'Simulate Paid ₹' + amountINR}
               </button>
             </div>
           </div>
@@ -294,7 +294,7 @@ export default function IndianPaymentModal({
 
             <h3 className="text-xl font-extrabold text-white">Wallet Deposit Successful!</h3>
             <p className="mt-1 text-xs text-slate-300">
-              \u20B9{amountINR} has been credited to your SMM panel balance.
+              ₹{amountINR} has been credited to your SMM panel balance.
             </p>
 
             <div className="my-5 rounded-xl border border-slate-800 bg-slate-950 p-4 text-left text-xs space-y-2">

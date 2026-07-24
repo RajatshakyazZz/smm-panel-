@@ -35,7 +35,7 @@ export default function DashboardSidebar({ role = 'customer', isAdminNav = false
     { label: 'Mass Order', href: '/dashboard/mass-order', icon: ListPlus },
     { label: 'Services', href: '/dashboard/services', icon: Grid },
     { label: 'Order History', href: '/dashboard/orders', icon: History },
-    { label: 'Add Funds (\u20B9)', href: '/dashboard/wallet', icon: Wallet },
+    { label: 'Add Funds (₹)', href: '/dashboard/wallet', icon: Wallet },
     { label: 'Support Tickets', href: '/dashboard/tickets', icon: LifeBuoy },
     { label: 'Affiliate Program', href: '/dashboard/affiliate', icon: Users },
     { label: 'API Access', href: '/dashboard/api-docs', icon: Code2 },

@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
         max: s.maxQuantity,
         refill: s.refillSupported,
         cancel: s.cancelSupported,
-        currency: 'INR (\u20B9)',
+        currency: 'INR (₹)',
       }));
       return NextResponse.json(services);
     }

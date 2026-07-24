@@ -78,10 +78,10 @@ export default function OrderHistoryPage() {
         onLogout={() => (window.location.href = '/login')}
       />
 
-      <div className="flex flex-1">
+      <div className="flex flex-1 min-w-0">
         <DashboardSidebar role={user?.role} />
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full min-w-0">
           <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
               <h1 className="text-2xl font-black text-white">Order History</h1>
@@ -131,7 +131,7 @@ export default function OrderHistoryPage() {
                     <th className="py-3.5 px-4">Date</th>
                     <th className="py-3.5 px-4">Service</th>
                     <th className="py-3.5 px-4">Link</th>
-                    <th className="py-3.5 px-4">Charge (\u20B9)</th>
+                    <th className="py-3.5 px-4">Charge (₹)</th>
                     <th className="py-3.5 px-4">Start / Remains</th>
                     <th className="py-3.5 px-4">Status</th>
                     <th className="py-3.5 px-4 text-right">Actions</th>
@@ -159,13 +159,13 @@ export default function OrderHistoryPage() {
                           <span className="font-semibold text-white block truncate">{ord.serviceName}</span>
                           <span className="text-[10px] text-slate-400">Qty: {ord.quantity.toLocaleString()}</span>
                         </td>
-                        <td className="py-3.5 px-4 max-w-xs truncate font-mono text-blue-400">
-                          <a href={ord.link} target="_blank" rel="noreferrer" className="hover:underline flex items-center gap-1">
+                        <td className="py-3.5 px-4 max-w-[160px] sm:max-w-xs font-mono text-blue-400">
+                          <a href={ord.link} target="_blank" rel="noreferrer" className="hover:underline inline-flex items-center gap-1 max-w-full">
                             <span className="truncate">{ord.link}</span>
                             <ExternalLink className="h-3 w-3 shrink-0" />
                           </a>
                         </td>
-                        <td className="py-3.5 px-4 font-mono font-bold text-emerald-400">\u20B9{ord.chargeINR.toFixed(2)}</td>
+                        <td className="py-3.5 px-4 font-mono font-bold text-emerald-400">₹{ord.chargeINR.toFixed(2)}</td>
                         <td className="py-3.5 px-4 font-mono text-slate-300">
                           {ord.startCount} / {ord.remains}
                         </td>

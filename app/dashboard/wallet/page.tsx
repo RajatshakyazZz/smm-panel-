@@ -46,7 +46,7 @@ export default function WalletPage() {
         <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
           <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-black text-white">Wallet & Add Funds (\u20B9)</h1>
+              <h1 className="text-2xl font-black text-white">Wallet & Add Funds (₹)</h1>
               <p className="mt-1 text-xs text-slate-400">Recharge your wallet balance using official Indian Payment Gateways</p>
             </div>
 
@@ -55,7 +55,7 @@ export default function WalletPage() {
               className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-5 py-3 text-xs font-bold text-white shadow-xl shadow-blue-600/30 hover:from-blue-500 hover:to-indigo-500"
             >
               <Plus className="h-4 w-4" />
-              <span>Add Funds in \u20B9 Now</span>
+              <span>Add Funds in ₹ Now</span>
             </button>
           </div>
 
@@ -67,7 +67,7 @@ export default function WalletPage() {
               </div>
               <div>
                 <span className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Available Balance</span>
-                <span className="text-3xl font-black text-white font-mono">\u20B9{user ? user.balanceINR.toFixed(2) : '0.00'}</span>
+                <span className="text-3xl font-black text-white font-mono">₹{user ? user.balanceINR.toFixed(2) : '0.00'}</span>
               </div>
             </div>
 
@@ -91,7 +91,7 @@ export default function WalletPage() {
                   </div>
                   <p className="text-xs text-slate-400">{gw.description}</p>
                   <div className="pt-2 flex justify-between text-[11px] text-slate-500 border-t border-slate-800/80">
-                    <span>Min: \u20B9{gw.minAmountINR}</span>
+                    <span>Min: ₹{gw.minAmountINR}</span>
                     <span>Fee: {gw.feePercent}%</span>
                   </div>
                 </div>
@@ -110,7 +110,7 @@ export default function WalletPage() {
                       <th className="py-3.5 px-4">Tx ID</th>
                       <th className="py-3.5 px-4">Date</th>
                       <th className="py-3.5 px-4">Gateway</th>
-                      <th className="py-3.5 px-4">Amount (\u20B9)</th>
+                      <th className="py-3.5 px-4">Amount (₹)</th>
                       <th className="py-3.5 px-4">Status</th>
                     </tr>
                   </thead>
@@ -129,7 +129,7 @@ export default function WalletPage() {
                             {new Date(tx.createdAt).toLocaleString('en-IN')}
                           </td>
                           <td className="py-3.5 px-4 font-semibold text-white">{tx.gatewayName}</td>
-                          <td className="py-3.5 px-4 font-mono font-bold text-emerald-400">+\u20B9{tx.amountINR.toFixed(2)}</td>
+                          <td className="py-3.5 px-4 font-mono font-bold text-emerald-400">+₹{tx.amountINR.toFixed(2)}</td>
                           <td className="py-3.5 px-4">
                             <span className="rounded bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-400 border border-emerald-500/20">
                               {tx.status}

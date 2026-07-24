@@ -134,27 +134,27 @@ export default function AdminOverviewPage() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8">
             
             <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-5">
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Total Revenue (\u20B9)</span>
+              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Total Revenue (₹)</span>
               <div className="mt-2 text-2xl font-black text-white font-mono">
-                \u20B9{metrics ? metrics.totalRevenueINR.toFixed(2) : '0.00'}
+                ₹{metrics ? metrics.totalRevenueINR.toFixed(2) : '0.00'}
               </div>
               <span className="mt-1 block text-[11px] text-emerald-400 font-medium">● Indian Gateway Deposits</span>
             </div>
 
             <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-5">
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Net Profit (\u20B9)</span>
+              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Net Profit (₹)</span>
               <div className="mt-2 text-2xl font-black text-emerald-400 font-mono">
-                \u20B9{metrics ? metrics.totalNetProfitINR.toFixed(2) : '0.00'}
+                ₹{metrics ? metrics.totalNetProfitINR.toFixed(2) : '0.00'}
               </div>
               <span className="mt-1 block text-[11px] text-slate-400">35% Avg Selling Margin</span>
             </div>
 
             <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-5">
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Provider Balance ($)</span>
+              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Provider Balance (₹)</span>
               <div className="mt-2 text-2xl font-black text-blue-400 font-mono">
-                {metrics ? metrics.providerBalanceUSD : '$0.00'}
+                ₹{metrics ? (parseFloat(metrics.providerBalanceUSD.replace(/[^0-9.]/g, '')) * 87).toFixed(2) : '0.00'}
               </div>
-              <span className="mt-1 block text-[11px] text-blue-300 font-medium">FameProvider USD Reserve</span>
+              <span className="mt-1 block text-[11px] text-blue-300 font-medium">FameProvider USD Reserve ({metrics ? metrics.providerBalanceUSD : '$0.00'})</span>
             </div>
 
             <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-5">
@@ -173,15 +173,15 @@ export default function AdminOverviewPage() {
           <div className="mb-8 rounded-2xl border border-slate-800 bg-slate-900/80 p-6 shadow-xl">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h2 className="text-base font-bold text-white">Revenue vs Net Profit (\u20B9)</h2>
+                <h2 className="text-base font-bold text-white">Revenue vs Net Profit (₹)</h2>
                 <p className="text-xs text-slate-400">Weekly financial performance curve in Indian Rupees</p>
               </div>
               <div className="flex items-center gap-4 text-xs font-semibold">
                 <span className="flex items-center gap-1.5 text-blue-400">
-                  <span className="h-3 w-3 rounded-full bg-blue-500" /> Revenue (\u20B9)
+                  <span className="h-3 w-3 rounded-full bg-blue-500" /> Revenue (₹)
                 </span>
                 <span className="flex items-center gap-1.5 text-emerald-400">
-                  <span className="h-3 w-3 rounded-full bg-emerald-500" /> Net Profit (\u20B9)
+                  <span className="h-3 w-3 rounded-full bg-emerald-500" /> Net Profit (₹)
                 </span>
               </div>
             </div>

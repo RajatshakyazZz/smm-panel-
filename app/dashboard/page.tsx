@@ -120,7 +120,7 @@ export default function UserDashboard() {
 
       const data = await res.json();
       if (data.success && data.order) {
-        setOrderMsg({ type: 'success', text: `Order #${data.order.id} placed successfully! \u20B9${data.order.chargeINR} deducted.` });
+        setOrderMsg({ type: 'success', text: `Order #${data.order.id} placed successfully! ₹${data.order.chargeINR} deducted.` });
         setOrders([data.order, ...orders]);
         setUser({ ...user, balanceINR: user.balanceINR - data.order.chargeINR, spentINR: user.spentINR + data.order.chargeINR });
         setLink('');

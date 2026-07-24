@@ -53,7 +53,7 @@ export default function SignupPage() {
             </div>
           </Link>
           <h2 className="text-2xl font-bold text-white">Create SMM Account</h2>
-          <p className="mt-1 text-xs text-slate-400">Get Instant Bonus \u20B9100 Wallet Credit on Sign Up!</p>
+          <p className="mt-1 text-xs text-slate-400">Get Instant Bonus ₹100 Wallet Credit on Sign Up!</p>
         </div>
 
         {error && (
@@ -110,7 +110,7 @@ export default function SignupPage() {
             disabled={loading}
             className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 py-3 text-sm font-bold text-white shadow-lg shadow-blue-600/30 hover:from-blue-500 hover:to-indigo-500 disabled:opacity-50"
           >
-            {loading ? 'Creating Account...' : 'Register & Claim \u20B9100 Free'}
+            {loading ? 'Creating Account...' : 'Register & Claim ₹100 Free'}
           </button>
         </form>
 

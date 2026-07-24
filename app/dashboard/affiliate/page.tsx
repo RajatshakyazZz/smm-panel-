@@ -63,8 +63,8 @@ export default function AffiliatePage() {
             </div>
 
             <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5 text-center">
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Total Earnings (\u20B9)</span>
-              <span className="text-3xl font-black text-emerald-400 font-mono mt-2 block">\u20B91,240.00</span>
+              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Total Earnings (₹)</span>
+              <span className="text-3xl font-black text-emerald-400 font-mono mt-2 block">₹1,240.00</span>
               <span className="text-[11px] text-slate-500 mt-1 block">Auto-credited to wallet balance</span>
             </div>
           </div>

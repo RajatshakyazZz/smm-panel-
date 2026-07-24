@@ -98,7 +98,7 @@ export default function NewOrderPage() {
 
       const data = await res.json();
       if (data.success && data.order) {
-        setMsg({ type: 'success', text: `Order #${data.order.id} placed successfully! \u20B9${data.order.chargeINR} deducted from wallet.` });
+        setMsg({ type: 'success', text: `Order #${data.order.id} placed successfully! ₹${data.order.chargeINR} deducted from wallet.` });
         setUser({ ...user, balanceINR: user.balanceINR - data.order.chargeINR, spentINR: user.spentINR + data.order.chargeINR });
         setLink('');
       } else {

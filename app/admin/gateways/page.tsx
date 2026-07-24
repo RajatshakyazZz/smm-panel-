@@ -69,6 +69,38 @@ export default function AdminGatewaysPage() {
 
           {msg && <div className="mb-6 rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-3 text-xs text-emerald-400 font-semibold">{msg}</div>}
 
+          {/* Solution Banner for No Payment Gateway */}
+          <div className="mb-8 rounded-2xl border border-amber-500/30 bg-amber-950/20 p-6 shadow-xl">
+            <div className="flex items-start gap-4">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/20 text-amber-400 font-black text-lg">
+                💡
+              </div>
+              <div className="space-y-2">
+                <h2 className="text-base font-bold text-white">Bina Payment Gateway ke Panel Kaise Chalaye? (Zero Gateway Solution)</h2>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Agar aapke paas koi official Merchant Payment Gateway (Razorpay/PhonePe Merchant) nahi hai, tab bhi aap apna SMM Panel 100% chalasaate hain. India me maximum panel owners yahi solutions use karte hain:
+                </p>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2">
+                  <div className="rounded-xl border border-slate-800 bg-slate-900/90 p-3.5">
+                    <span className="text-xs font-bold text-amber-400 block mb-1">1. Personal UPI QR Code</span>
+                    <p className="text-[11px] text-slate-400">Apna PhonePe / Paytm / GPay ka Personal QR Code ya UPI ID set karein. User QR scan karke direct aapke bank me pay karega.</p>
+                  </div>
+
+                  <div className="rounded-xl border border-slate-800 bg-slate-900/90 p-3.5">
+                    <span className="text-xs font-bold text-emerald-400 block mb-1">2. Instant UTR / Reference No.</span>
+                    <p className="text-[11px] text-slate-400">Payment ke baad user 12-digit UTR Number enter karega. Panel auto-match karke ya aap 1-click me approve kar sakte hain.</p>
+                  </div>
+
+                  <div className="rounded-xl border border-slate-800 bg-slate-900/90 p-3.5">
+                    <span className="text-xs font-bold text-purple-400 block mb-1">3. Admin Manual Balance Credit</span>
+                    <p className="text-[11px] text-slate-400">WhatsApp par payment aane par aap <strong className="text-white">Admin Panel → Registered Users</strong> me jaakar kisi bhi user ka wallet balance 1 second me Add kar sakte hain.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div className="space-y-6">
             {gateways.map((gw) => (
               <div key={gw.id} className="rounded-2xl border border-slate-800 bg-slate-900/80 p-6 shadow-xl space-y-4">
@@ -113,7 +145,7 @@ export default function AdminGatewaysPage() {
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-400 mb-1">Min Deposit (\u20B9)</label>
+                    <label className="block text-[11px] font-semibold text-slate-400 mb-1">Min Deposit (₹)</label>
                     <input
                       type="number"
                       defaultValue={gw.minAmountINR}

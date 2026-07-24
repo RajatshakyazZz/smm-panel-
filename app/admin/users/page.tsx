@@ -76,7 +76,7 @@ export default function AdminUsersPage() {
         <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
           <div className="mb-6">
             <h1 className="text-2xl font-black text-white">Registered User Accounts</h1>
-            <p className="mt-1 text-xs text-slate-400">Manage user wallet balances in \u20B9, permissions and active status</p>
+            <p className="mt-1 text-xs text-slate-400">Manage user wallet balances in ₹, permissions and active status</p>
           </div>
 
           {msg && <div className="mb-4 text-xs font-bold text-emerald-400">{msg}</div>}
@@ -85,7 +85,7 @@ export default function AdminUsersPage() {
           {selectedUser && (
             <div className="mb-8 rounded-2xl border border-purple-500/30 bg-purple-950/20 p-6 shadow-xl">
               <h2 className="text-sm font-bold text-white mb-3">
-                Adjust Balance for: <span className="text-purple-400 font-mono">{selectedUser.username}</span> (\u20B9{selectedUser.balanceINR.toFixed(2)})
+                Adjust Balance for: <span className="text-purple-400 font-mono">{selectedUser.username}</span> (₹{selectedUser.balanceINR.toFixed(2)})
               </h2>
 
               <form onSubmit={handleAdjustBalance} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
@@ -102,7 +102,7 @@ export default function AdminUsersPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Amount (\u20B9)</label>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Amount (₹)</label>
                   <input
                     type="number"
                     required
@@ -150,8 +150,8 @@ export default function AdminUsersPage() {
                     <th className="py-3.5 px-4">User ID</th>
                     <th className="py-3.5 px-4">Username</th>
                     <th className="py-3.5 px-4">Role</th>
-                    <th className="py-3.5 px-4">Balance (\u20B9)</th>
-                    <th className="py-3.5 px-4">Spent (\u20B9)</th>
+                    <th className="py-3.5 px-4">Balance (₹)</th>
+                    <th className="py-3.5 px-4">Spent (₹)</th>
                     <th className="py-3.5 px-4 text-right">Actions</th>
                   </tr>
                 </thead>
@@ -168,8 +168,8 @@ export default function AdminUsersPage() {
                           {usr.role}
                         </span>
                       </td>
-                      <td className="py-3.5 px-4 font-mono font-bold text-emerald-400">\u20B9{usr.balanceINR.toFixed(2)}</td>
-                      <td className="py-3.5 px-4 font-mono text-slate-300">\u20B9{usr.spentINR.toFixed(2)}</td>
+                      <td className="py-3.5 px-4 font-mono font-bold text-emerald-400">₹{usr.balanceINR.toFixed(2)}</td>
+                      <td className="py-3.5 px-4 font-mono text-slate-300">₹{usr.spentINR.toFixed(2)}</td>
                       <td className="py-3.5 px-4 text-right">
                         <button
                           onClick={() => setSelectedUser(usr)}
