@@ -105,20 +105,6 @@ export default function DashboardSidebar({ role = 'customer', isAdminNav = false
         </div>
       )}
 
-      {/* Switcher Banner if Super Admin */}
-      {role === 'super_admin' && (
-        <div className="mt-4 rounded-xl border border-slate-800 bg-slate-950 p-3 text-center">
-          <span className="block text-[11px] text-slate-400 mb-2">Switch Panel Mode:</span>
-          <Link
-            href={isAdminNav ? '/dashboard' : '/admin'}
-            className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl border border-purple-500/30 bg-purple-500/10 py-2 text-xs font-bold text-purple-300 hover:bg-purple-500/20 transition-colors"
-          >
-            <ShieldCheck className="h-3.5 w-3.5" />
-            <span>{isAdminNav ? 'Go to User View' : 'Go to Admin View'}</span>
-          </Link>
-        </div>
-      )}
-
     </aside>
   );
 }

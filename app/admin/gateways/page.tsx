@@ -26,17 +26,18 @@ export default function AdminGatewaysPage() {
   };
 
   useEffect(() => {
-    fetch('/api/auth', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'login', username: 'admin' }),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.user) setAdminUser(data.user);
-      });
-
-    fetchGateways();
+    const storedUser = typeof window !== 'undefined' ? localStorage.getItem('smm_user') : null;
+    if (storedUser) {
+      try {
+        const parsed = JSON.parse(storedUser);
+        if (parsed.role === 'super_admin') {
+          setAdminUser(parsed);
+          fetchGateways();
+          return;
+        }
+      } catch (e) {}
+    }
+    window.location.href = '/login?error=admin_access_required';
   }, []);
 
   const handleApproveTx = async (txId: string) => {

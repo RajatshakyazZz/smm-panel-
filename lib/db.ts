@@ -63,21 +63,9 @@ const defaultUsers: User[] = [
     username: 'admin',
     email: 'admin@fameprovider.com',
     role: 'super_admin',
-    balanceINR: 50000.0,
-    spentINR: 12500.0,
+    balanceINR: 0.0,
+    spentINR: 0.0,
     apiKey: 'fame_admin_api_key_88990011',
-    status: 'active',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'usr_demo_002',
-    username: 'rajat_creator',
-    email: 'rajatshakya566@gmail.com',
-    role: 'customer',
-    balanceINR: 2450.0,
-    spentINR: 4850.0,
-    apiKey: 'fame_usr_api_key_99887766',
     status: 'active',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -351,80 +339,9 @@ const defaultGateways: PaymentGatewayConfig[] = [
   },
 ];
 
-const defaultOrders: SMMOrder[] = [
-  {
-    id: 'ord_9001',
-    userId: 'usr_demo_002',
-    username: 'rajat_creator',
-    serviceId: 'srv_101',
-    serviceName: 'Instagram Followers [Real Active - 30 Days Refill - Max 500K]',
-    category: 'Instagram - Followers [Non-Drop & Instant]',
-    providerOrderId: 554320,
-    link: 'https://instagram.com/rajat_official_2026',
-    quantity: 1000,
-    chargeINR: 32.88,
-    providerCostUSD: 0.28,
-    providerCostINR: 24.36,
-    profitINR: 8.52,
-    startCount: 1240,
-    remains: 0,
-    status: 'Completed',
-    createdAt: new Date(Date.now() - 3600000 * 24).toISOString(),
-    updatedAt: new Date(Date.now() - 3600000 * 20).toISOString(),
-  },
-  {
-    id: 'ord_9002',
-    userId: 'usr_demo_002',
-    username: 'rajat_creator',
-    serviceId: 'srv_202',
-    serviceName: 'Instagram Reels Views [Ultra Fast - Viral Boost Engine]',
-    category: 'Instagram - Likes & Reels Views [Indian Real]',
-    providerOrderId: 554890,
-    link: 'https://www.instagram.com/reel/C3x9kLpMY8/',
-    quantity: 10000,
-    chargeINR: 19.50,
-    providerCostUSD: 0.15,
-    providerCostINR: 13.05,
-    profitINR: 6.45,
-    startCount: 540,
-    remains: 1200,
-    status: 'In progress',
-    createdAt: new Date(Date.now() - 3600000 * 2).toISOString(),
-    updatedAt: new Date(Date.now() - 3600000 * 1).toISOString(),
-  },
-];
+const defaultOrders: SMMOrder[] = [];
 
-const defaultTickets: SupportTicket[] = [
-  {
-    id: 'tkt_101',
-    userId: 'usr_demo_002',
-    username: 'rajat_creator',
-    subject: 'Refill Request for Instagram Order #ord_9001',
-    orderId: 'ord_9001',
-    status: 'Answered',
-    priority: 'Medium',
-    messages: [
-      {
-        id: 'msg_1',
-        senderId: 'usr_demo_002',
-        senderName: 'rajat_creator',
-        senderRole: 'customer',
-        message: 'Hello FameProvider support, my follower order dropped slightly by 20 followers. Please trigger automatic refill.',
-        createdAt: new Date(Date.now() - 3600000 * 5).toISOString(),
-      },
-      {
-        id: 'msg_2',
-        senderId: 'usr_admin_001',
-        senderName: 'FameProvider Admin',
-        senderRole: 'super_admin',
-        message: 'Hi Rajat! Refill has been submitted directly to FameProvider server. You will see followers restored within 15-30 minutes.',
-        createdAt: new Date(Date.now() - 3600000 * 3).toISOString(),
-      },
-    ],
-    createdAt: new Date(Date.now() - 3600000 * 5).toISOString(),
-    updatedAt: new Date(Date.now() - 3600000 * 3).toISOString(),
-  },
-];
+const defaultTickets: SupportTicket[] = [];
 
 class SMMDatabase {
   private data: DBData;

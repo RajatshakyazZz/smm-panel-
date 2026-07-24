@@ -31,6 +31,9 @@ export default function LoginPage() {
 
       const data = await res.json();
       if (data.user) {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('smm_user', JSON.stringify(data.user));
+        }
         if (data.user.role === 'super_admin') {
           router.push('/admin');
         } else {
@@ -59,6 +62,9 @@ export default function LoginPage() {
 
       const data = await res.json();
       if (data.user) {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('smm_user', JSON.stringify(data.user));
+        }
         if (role === 'admin') {
           router.push('/admin');
         } else {

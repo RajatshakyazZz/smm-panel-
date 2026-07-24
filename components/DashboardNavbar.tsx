@@ -98,23 +98,6 @@ export default function DashboardNavbar({ user, onOpenDepositModal, onLogout }: 
           </div>
         )}
 
-        {/* View Switcher for Super Admin */}
-        {user?.role === 'super_admin' && (
-          <button
-            onClick={() => {
-              if (pathname.startsWith('/admin')) {
-                router.push('/dashboard');
-              } else {
-                router.push('/admin');
-              }
-            }}
-            className="hidden sm:inline-flex items-center gap-1.5 rounded-xl border border-purple-500/30 bg-purple-500/10 px-3 py-1.5 text-xs font-bold text-purple-300 hover:bg-purple-500/20 transition-colors"
-          >
-            <ShieldCheck className="h-3.5 w-3.5 text-purple-400" />
-            <span>{pathname.startsWith('/admin') ? 'User Panel' : 'Admin Panel'}</span>
-          </button>
-        )}
-
         {/* User Info & Logout */}
         {user && (
           <div className="flex items-center gap-2.5 border-l border-slate-800/80 pl-3 sm:pl-4">

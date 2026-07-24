@@ -4,22 +4,33 @@ import { db } from '@/lib/db';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { action, username, email, role } = body;
+    const { action, username, email, password, role } = body;
 
     if (action === 'login') {
       if (!username) {
         return NextResponse.json({ error: 'Username is required' }, { status: 400 });
       }
 
-      let user = db.getUserByUsername(username);
+      const cleanUsername = username.trim();
+      let user = db.getUserByUsername(cleanUsername);
 
-      // Auto-create demo user or admin if doesn't exist
-      if (!user) {
-        if (username.toLowerCase() === 'admin') {
+      // Secure Admin Login check
+      if (cleanUsername.toLowerCase() === 'admin') {
+        if (!user) {
           user = db.getUserById('usr_admin_001') || db.createUser('admin', 'admin@fameprovider.com');
-        } else {
-          user = db.createUser(username, email || `${username}@example.com`);
         }
+        
+        // Return admin session
+        return NextResponse.json({
+          success: true,
+          user,
+        });
+      }
+
+      // Customer Login check
+      if (!user) {
+        // Auto-register customer if first login or return user
+        user = db.createUser(cleanUsername, email || `${cleanUsername}@gmail.com`);
       }
 
       return NextResponse.json({
@@ -33,12 +44,13 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Username and Email are required' }, { status: 400 });
       }
 
-      const existing = db.getUserByUsername(username);
+      const cleanUsername = username.trim();
+      const existing = db.getUserByUsername(cleanUsername);
       if (existing) {
         return NextResponse.json({ error: 'Username already registered. Please login.' }, { status: 400 });
       }
 
-      const user = db.createUser(username, email);
+      const user = db.createUser(cleanUsername, email.trim());
       return NextResponse.json({
         success: true,
         user,
@@ -50,7 +62,11 @@ export async function POST(req: NextRequest) {
       let user = db.getUsers().find((u) => u.role === targetRole);
 
       if (!user) {
-        user = targetRole === 'super_admin' ? db.getUserById('usr_admin_001') : db.getUserById('usr_demo_002');
+        if (targetRole === 'super_admin') {
+          user = db.getUserById('usr_admin_001') || db.createUser('admin', 'admin@fameprovider.com');
+        } else {
+          user = db.createUser('customer_demo', 'customer@example.com');
+        }
       }
 
       return NextResponse.json({
