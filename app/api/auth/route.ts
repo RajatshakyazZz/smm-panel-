@@ -57,6 +57,20 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    if (action === 'google_login') {
+      const googleUsername = 'google_user_' + Math.random().toString(36).substring(2, 6);
+      let user = db.getUsers().find((u) => u.email.endsWith('@gmail.com') || u.username.startsWith('google_user_'));
+
+      if (!user) {
+        user = db.createUser(googleUsername, `${googleUsername}@gmail.com`);
+      }
+
+      return NextResponse.json({
+        success: true,
+        user,
+      });
+    }
+
     if (action === 'demo_login') {
       const targetRole = role === 'admin' ? 'super_admin' : 'customer';
       let user = db.getUsers().find((u) => u.role === targetRole);
