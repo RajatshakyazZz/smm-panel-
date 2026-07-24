@@ -22,13 +22,14 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { userId, gatewayCode, amountINR } = body;
+    const { userId, gatewayCode, amountINR, transactionRef, utr } = body;
 
     if (!userId || !gatewayCode || !amountINR) {
       return NextResponse.json({ error: 'Missing payment parameters' }, { status: 400 });
     }
 
-    const res = db.processWalletDeposit(userId, gatewayCode, Number(amountINR));
+    const ref = utr || transactionRef;
+    const res = db.processWalletDeposit(userId, gatewayCode, Number(amountINR), ref);
     if ('error' in res) {
       return NextResponse.json({ error: res.error }, { status: 400 });
     }

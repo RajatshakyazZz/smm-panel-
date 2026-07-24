@@ -88,7 +88,7 @@ export interface PriceAlert {
 export interface PaymentGatewayConfig {
   id: string;
   name: string;
-  code: 'phonepe' | 'razorpay' | 'paytm' | 'cashfree' | 'easebuzz' | 'payu';
+  code: 'personal_upi' | 'phonepe' | 'razorpay' | 'paytm' | 'cashfree' | 'easebuzz' | 'payu';
   title: string;
   description: string;
   logo: string;
@@ -97,6 +97,9 @@ export interface PaymentGatewayConfig {
   merchantId?: string;
   apiKey?: string;
   apiSecret?: string;
+  upiId?: string;
+  upiName?: string;
+  qrImageUrl?: string;
   minAmountINR: number;
   maxAmountINR: number;
   feePercent: number;

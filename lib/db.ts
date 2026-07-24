@@ -259,6 +259,22 @@ const defaultServices: SMMService[] = [
 
 const defaultGateways: PaymentGatewayConfig[] = [
   {
+    id: 'gw_personal_upi',
+    name: 'Personal UPI QR & UPI ID (Direct Bank)',
+    code: 'personal_upi',
+    title: 'Pay via Personal PhonePe / GPay / Paytm QR Code',
+    description: 'No merchant account required! Scan QR Code or copy UPI ID and enter 12-digit UTR to credit balance instantly.',
+    logo: 'https://cdn-icons-png.flaticon.com/512/825/825500.png',
+    enabled: true,
+    isTestMode: false,
+    upiId: '9876543210@paytm',
+    upiName: 'SMM Panel Owner',
+    qrImageUrl: '',
+    minAmountINR: 10,
+    maxAmountINR: 100000,
+    feePercent: 0.0,
+  },
+  {
     id: 'gw_phonepe',
     name: 'PhonePe Payment Gateway',
     code: 'phonepe',
@@ -940,7 +956,7 @@ class SMMDatabase {
     return gw;
   }
 
-  processWalletDeposit(userId: string, gatewayCode: string, amountINR: number): WalletTransaction | { error: string } {
+  processWalletDeposit(userId: string, gatewayCode: string, amountINR: number, customTxRef?: string): WalletTransaction | { error: string } {
     const user = this.getUserById(userId);
     if (!user) return { error: 'User not found' };
 
@@ -968,7 +984,7 @@ class SMMDatabase {
       feeINR,
       netINR,
       status: 'SUCCESS',
-      transactionRef: 'PAY_' + Date.now().toString(36).toUpperCase(),
+      transactionRef: customTxRef || ('PAY_' + Date.now().toString(36).toUpperCase()),
       createdAt: new Date().toISOString(),
     };
 
