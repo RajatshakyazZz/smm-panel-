@@ -23,6 +23,7 @@ export default function IndianPaymentModal({
   const [utrInput, setUtrInput] = useState('');
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isPendingApproval, setIsPendingApproval] = useState(false);
   const [step, setStep] = useState<'form' | 'qr' | 'success'>('form');
   const [error, setError] = useState('');
   const [transactionRef, setTransactionRef] = useState('');
@@ -107,8 +108,12 @@ export default function IndianPaymentModal({
       const data = await res.json();
       if (data.success && data.user) {
         setTransactionRef(data.transaction.transactionRef);
+        const isPending = data.transaction.status === 'PENDING';
+        setIsPendingApproval(isPending);
         setStep('success');
-        onPaymentSuccess(data.user.balanceINR);
+        if (!isPending) {
+          onPaymentSuccess(data.user.balanceINR);
+        }
       } else {
         setError(data.error || 'Payment verification failed');
       }
@@ -335,30 +340,40 @@ export default function IndianPaymentModal({
           </div>
         )}
 
-        {/* STEP 3: SUCCESS */}
+        {/* STEP 3: SUCCESS or PENDING */}
         {step === 'success' && (
           <div className="text-center py-4">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-              <CheckCircle2 className="h-8 w-8" />
+            <div className={`mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border ${
+              isPendingApproval
+                ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
+                : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+            }`}>
+              {isPendingApproval ? <span className="text-2xl font-bold">⏳</span> : <CheckCircle2 className="h-8 w-8" />}
             </div>
 
-            <h3 className="text-xl font-extrabold text-white">Wallet Deposit Successful!</h3>
+            <h3 className="text-xl font-extrabold text-white">
+              {isPendingApproval ? 'Request Submitted for Verification!' : 'Wallet Deposit Successful!'}
+            </h3>
             <p className="mt-1 text-xs text-slate-300">
-              ₹{amountINR} has been credited to your SMM panel balance.
+              {isPendingApproval
+                ? `₹${amountINR} deposit request with UTR #${utrInput || transactionRef} has been sent to Admin for verification.`
+                : `₹${amountINR} has been credited to your SMM panel balance.`}
             </p>
 
             <div className="my-5 rounded-xl border border-slate-800 bg-slate-950 p-4 text-left text-xs space-y-2">
               <div className="flex justify-between text-slate-400">
-                <span>Transaction Ref:</span>
-                <span className="font-mono font-bold text-white">{transactionRef}</span>
+                <span>Transaction Ref / UTR:</span>
+                <span className="font-mono font-bold text-amber-300">{transactionRef}</span>
               </div>
               <div className="flex justify-between text-slate-400">
                 <span>Payment Method:</span>
-                <span className="font-semibold text-amber-400">{currentGw.name}</span>
+                <span className="font-semibold text-white">{currentGw.name}</span>
               </div>
               <div className="flex justify-between text-slate-400">
                 <span>Status:</span>
-                <span className="font-bold text-emerald-400">SUCCESS & CREDITED</span>
+                <span className={`font-bold ${isPendingApproval ? 'text-amber-400' : 'text-emerald-400'}`}>
+                  {isPendingApproval ? 'PENDING ADMIN APPROVAL (2-5 Mins)' : 'SUCCESS & CREDITED'}
+                </span>
               </div>
             </div>
 
@@ -366,7 +381,7 @@ export default function IndianPaymentModal({
               onClick={handleCloseAndReset}
               className="w-full rounded-xl bg-blue-600 py-3 text-sm font-bold text-white shadow-lg shadow-blue-600/30 hover:bg-blue-500"
             >
-              Done & Start Placing Orders
+              {isPendingApproval ? 'Close & View Dashboard' : 'Done & Start Placing Orders'}
             </button>
           </div>
         )}

@@ -100,6 +100,7 @@ export interface PaymentGatewayConfig {
   upiId?: string;
   upiName?: string;
   qrImageUrl?: string;
+  requireApproval?: boolean;
   minAmountINR: number;
   maxAmountINR: number;
   feePercent: number;

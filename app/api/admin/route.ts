@@ -155,6 +155,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, gateway: gw });
     }
 
+    if (action === 'approve_deposit') {
+      const { txId } = body;
+      if (!txId) return NextResponse.json({ error: 'txId is required' }, { status: 400 });
+      const res = db.approveWalletDeposit(txId);
+      return NextResponse.json(res);
+    }
+
+    if (action === 'reject_deposit') {
+      const { txId } = body;
+      if (!txId) return NextResponse.json({ error: 'txId is required' }, { status: 400 });
+      const res = db.rejectWalletDeposit(txId);
+      return NextResponse.json(res);
+    }
+
     if (action === 'resolve_alert') {
       if (alertId) {
         db.resolvePriceAlert(alertId);

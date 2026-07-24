@@ -970,9 +970,14 @@ class SMMDatabase {
     const feeINR = Number(((amountINR * gw.feePercent) / 100).toFixed(2));
     const netINR = Number((amountINR - feeINR).toFixed(2));
 
-    // Credit user balance
-    user.balanceINR = Number((user.balanceINR + netINR).toFixed(2));
-    user.updatedAt = new Date().toISOString();
+    const needsApproval = Boolean(gw.requireApproval);
+    const status = needsApproval ? 'PENDING' : 'SUCCESS';
+
+    if (!needsApproval) {
+      // Credit user balance immediately if no manual approval required
+      user.balanceINR = Number((user.balanceINR + netINR).toFixed(2));
+      user.updatedAt = new Date().toISOString();
+    }
 
     const tx: WalletTransaction = {
       id: 'tx_' + Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 4),
@@ -983,16 +988,51 @@ class SMMDatabase {
       amountINR,
       feeINR,
       netINR,
-      status: 'SUCCESS',
+      status,
       transactionRef: customTxRef || ('PAY_' + Date.now().toString(36).toUpperCase()),
       createdAt: new Date().toISOString(),
     };
 
     this.data.transactions.unshift(tx);
-    this.addLog('WALLET', 'success', `Wallet deposit of ₹${amountINR} credited to ${user.username} via ${gw.name}`);
+    if (needsApproval) {
+      this.addLog('WALLET', 'warning', `Wallet deposit request of ₹${amountINR} (Ref: ${tx.transactionRef}) submitted by ${user.username} - Awaiting Admin UTR Verification`);
+    } else {
+      this.addLog('WALLET', 'success', `Wallet deposit of ₹${amountINR} credited to ${user.username} via ${gw.name}`);
+    }
     this.saveToDisk();
 
     return tx;
+  }
+
+  approveWalletDeposit(txId: string): { success: boolean; message?: string; error?: string } {
+    const tx = this.data.transactions.find((t) => t.id === txId);
+    if (!tx) return { success: false, error: 'Transaction not found' };
+    if (tx.status !== 'PENDING') return { success: false, error: 'Transaction is not in PENDING state' };
+
+    const user = this.getUserById(tx.userId);
+    if (!user) return { success: false, error: 'User not found' };
+
+    user.balanceINR = Number((user.balanceINR + tx.netINR).toFixed(2));
+    user.updatedAt = new Date().toISOString();
+    tx.status = 'SUCCESS';
+
+    this.addLog('WALLET', 'success', `Admin APPROVED deposit of ₹${tx.amountINR} (Ref: ${tx.transactionRef}) for ${user.username}`);
+    this.saveToDisk();
+
+    return { success: true, message: `Deposit of ₹${tx.amountINR} approved and credited to ${user.username}!` };
+  }
+
+  rejectWalletDeposit(txId: string): { success: boolean; message?: string; error?: string } {
+    const tx = this.data.transactions.find((t) => t.id === txId);
+    if (!tx) return { success: false, error: 'Transaction not found' };
+    if (tx.status !== 'PENDING') return { success: false, error: 'Transaction is not in PENDING state' };
+
+    tx.status = 'FAILED';
+
+    this.addLog('WALLET', 'error', `Admin REJECTED fake/unverified deposit request of ₹${tx.amountINR} (Ref: ${tx.transactionRef}) for ${tx.username}`);
+    this.saveToDisk();
+
+    return { success: true, message: `Deposit request rejected for ${tx.username}.` };
   }
 
   getTransactions(userId?: string): WalletTransaction[] {

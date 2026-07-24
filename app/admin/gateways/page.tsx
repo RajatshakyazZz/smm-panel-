@@ -9,6 +9,7 @@ import { PaymentGatewayConfig, User } from '@/lib/types';
 export default function AdminGatewaysPage() {
   const [adminUser, setAdminUser] = useState<User | null>(null);
   const [gateways, setGateways] = useState<PaymentGatewayConfig[]>([]);
+  const [pendingTxs, setPendingTxs] = useState<any[]>([]);
   const [msg, setMsg] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -17,6 +18,10 @@ export default function AdminGatewaysPage() {
       .then((res) => res.json())
       .then((data) => {
         if (data.gateways) setGateways(data.gateways);
+        if (data.transactions) {
+          const pending = data.transactions.filter((t: any) => t.status === 'PENDING');
+          setPendingTxs(pending);
+        }
       });
   };
 
@@ -33,6 +38,45 @@ export default function AdminGatewaysPage() {
 
     fetchGateways();
   }, []);
+
+  const handleApproveTx = async (txId: string) => {
+    try {
+      const res = await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'approve_deposit', txId }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMsg(data.message || 'Deposit approved successfully!');
+        fetchGateways();
+      } else {
+        alert(data.error || 'Failed to approve');
+      }
+    } catch (e) {
+      alert('Network error');
+    }
+  };
+
+  const handleRejectTx = async (txId: string) => {
+    if (!confirm('Are you sure you want to REJECT this deposit request? User balance will NOT be credited.')) return;
+    try {
+      const res = await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'reject_deposit', txId }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMsg('Deposit request rejected.');
+        fetchGateways();
+      } else {
+        alert(data.error || 'Failed to reject');
+      }
+    } catch (e) {
+      alert('Network error');
+    }
+  };
 
   const handleFieldChange = (code: string, field: string, value: any) => {
     setGateways(
@@ -116,7 +160,68 @@ export default function AdminGatewaysPage() {
             </div>
           )}
 
-          {/* Solution Banner for No Payment Gateway */}
+          {/* PENDING DEPOSITS VERIFICATION DESK */}
+          {pendingTxs.length > 0 && (
+            <div className="mb-8 rounded-2xl border-2 border-amber-500/50 bg-amber-950/30 p-6 shadow-2xl relative overflow-hidden">
+              <div className="flex items-center justify-between border-b border-amber-500/30 pb-4 mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/20 text-amber-400 font-bold">
+                    ⏳
+                  </div>
+                  <div>
+                    <h2 className="text-base font-black text-white flex items-center gap-2">
+                      <span>Pending UPI Deposit Requests</span>
+                      <span className="rounded-full bg-amber-500 px-2.5 py-0.5 text-xs font-extrabold text-slate-950">
+                        {pendingTxs.length} Waiting Verification
+                      </span>
+                    </h2>
+                    <p className="text-xs text-slate-300">
+                      Users submitted UTRs for payment. Verify in your PhonePe / GPay / Paytm bank statement before approving.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {pendingTxs.map((tx) => (
+                  <div
+                    key={tx.id}
+                    className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 rounded-xl border border-slate-800 bg-slate-900/90 p-4"
+                  >
+                    <div>
+                      <div className="flex items-center gap-2 text-xs font-bold text-white">
+                        <span>User: <strong className="text-purple-400">{tx.username}</strong></span>
+                        <span className="text-slate-600">•</span>
+                        <span className="text-amber-300">Amount: ₹{tx.amountINR}</span>
+                      </div>
+                      <div className="mt-1 flex items-center gap-3 text-xs text-slate-400 font-mono">
+                        <span>UTR / Ref: <strong className="text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">{tx.transactionRef}</strong></span>
+                        <span>Gateway: {tx.gatewayName}</span>
+                        <span>Time: {new Date(tx.createdAt).toLocaleTimeString()}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 w-full md:w-auto">
+                      <button
+                        type="button"
+                        onClick={() => handleRejectTx(tx.id)}
+                        className="flex-1 md:flex-initial rounded-xl bg-red-600/20 border border-red-500/30 px-3.5 py-2 text-xs font-bold text-red-300 hover:bg-red-600/30"
+                      >
+                        Reject Fake UTR
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleApproveTx(tx.id)}
+                        className="flex-1 md:flex-initial rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-lg shadow-emerald-600/30 hover:bg-emerald-500"
+                      >
+                        ✓ Approve & Credit ₹{tx.netINR}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           <div className="mb-8 rounded-2xl border border-amber-500/30 bg-amber-950/20 p-6 shadow-xl">
             <div className="flex items-start gap-4">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/20 text-amber-400 font-black text-lg">
@@ -208,14 +313,31 @@ export default function AdminGatewaysPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-5 border-t border-slate-800/80 pt-5">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-5 border-t border-slate-800/80 pt-5">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">Custom QR Code Image URL (Optional)</label>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">Verification & Anti-Fraud Mode</label>
+                  <select
+                    value={personalUpiGw.requireApproval ? 'manual' : 'auto'}
+                    onChange={(e) => handleFieldChange('personal_upi', 'requireApproval', e.target.value === 'manual')}
+                    className="w-full rounded-xl border border-amber-500/40 bg-slate-950 p-2.5 text-xs font-bold text-amber-300 focus:outline-none"
+                  >
+                    <option value="manual">🔒 Manual Admin Verification (Secure)</option>
+                    <option value="auto">⚡ Instant Auto Credit (Demo Mode)</option>
+                  </select>
+                  <p className="mt-1 text-[10px] text-slate-400">
+                    {personalUpiGw.requireApproval
+                      ? 'Secure: Admin checks bank/PhonePe statement before approving deposit.'
+                      : 'Instant: Credits balance immediately upon UTR submission.'}
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">Custom QR Image URL (Optional)</label>
                   <input
                     type="text"
                     value={personalUpiGw.qrImageUrl || ''}
                     onChange={(e) => handleFieldChange('personal_upi', 'qrImageUrl', e.target.value)}
-                    placeholder="Leave empty for auto dynamic QR code"
+                    placeholder="Leave empty for auto QR code"
                     className="w-full rounded-xl border border-slate-700 bg-slate-950 p-2.5 text-xs text-white"
                   />
                 </div>
