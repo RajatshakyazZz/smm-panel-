@@ -15,6 +15,13 @@ export default function AdminSettingsPage() {
   const [testingKey, setTestingKey] = useState(false);
   const [testResult, setTestResult] = useState<{ success?: boolean; message?: string; error?: string; balanceUSD?: number; balanceINR?: string } | null>(null);
 
+  // Personal UPI Settings State
+  const [personalUpiId, setPersonalUpiId] = useState('9876543210@paytm');
+  const [personalUpiName, setPersonalUpiName] = useState('SMM Panel Owner');
+  const [personalQrUrl, setPersonalQrUrl] = useState('');
+  const [savingUpi, setSavingUpi] = useState(false);
+  const [upiMsg, setUpiMsg] = useState('');
+
   useEffect(() => {
     const storedUser = typeof window !== 'undefined' ? localStorage.getItem('smm_user') : null;
     if (storedUser) {
@@ -23,6 +30,7 @@ export default function AdminSettingsPage() {
         if (parsed.role === 'super_admin') {
           setAdminUser(parsed);
           fetchSettings();
+          fetchUpiSettings();
           return;
         }
       } catch (e) {}
@@ -40,6 +48,56 @@ export default function AdminSettingsPage() {
           setMargin(String(data.settings.globalMarginPercent));
         }
       });
+  };
+
+  const fetchUpiSettings = () => {
+    fetch('/api/wallet')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.gateways && Array.isArray(data.gateways)) {
+          const personal = data.gateways.find((g: any) => g.code === 'personal_upi');
+          if (personal) {
+            setPersonalUpiId(personal.upiId || '');
+            setPersonalUpiName(personal.upiName || '');
+            setPersonalQrUrl(personal.qrImageUrl || '');
+          }
+        }
+      });
+  };
+
+  const handleSaveUpiSettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingUpi(true);
+    setUpiMsg('');
+
+    try {
+      const res = await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'update_gateway',
+          gatewayCode: 'personal_upi',
+          gatewayUpdates: {
+            upiId: personalUpiId,
+            upiName: personalUpiName,
+            qrImageUrl: personalQrUrl,
+          },
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setUpiMsg('✓ Personal UPI ID & QR Code updated successfully! Customers will now see your new UPI ID.');
+        fetchUpiSettings();
+      } else {
+        setUpiMsg('Error: ' + (data.error || 'Failed to update UPI settings'));
+      }
+    } catch (err) {
+      setUpiMsg('Network error while updating UPI.');
+    } finally {
+      setSavingUpi(false);
+      setTimeout(() => setUpiMsg(''), 5000);
+    }
   };
 
   const handleTestApiKey = async () => {
@@ -116,6 +174,118 @@ export default function AdminSettingsPage() {
             >
               Edit UPI ID & QR →
             </a>
+          </div>
+
+          {/* Dedicated Personal UPI ID & QR Code Form */}
+          <div className="mb-8 rounded-2xl border-2 border-amber-500/50 bg-gradient-to-b from-amber-950/40 to-slate-900 p-6 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-amber-500/30 pb-4 mb-5">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/20 text-amber-400 font-bold text-lg border border-amber-500/30">
+                  📱
+                </div>
+                <div>
+                  <h2 className="text-base font-extrabold text-white flex items-center gap-2">
+                    <span>Personal UPI ID & Wallet Recharge QR</span>
+                    <span className="rounded-full bg-amber-500 px-2.5 py-0.5 text-[10px] font-black text-slate-950 uppercase tracking-wider">
+                      Live Customer Payment
+                    </span>
+                  </h2>
+                  <p className="text-xs text-slate-300">
+                    Customers will send payment to this UPI ID when depositing money into their panel wallet.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {upiMsg && (
+              <div className="mb-5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 p-3 text-xs text-emerald-300 font-bold">
+                {upiMsg}
+              </div>
+            )}
+
+            <form onSubmit={handleSaveUpiSettings} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-extrabold text-amber-300 mb-1.5">
+                    Your Personal UPI ID (VPA) *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={personalUpiId}
+                    onChange={(e) => setPersonalUpiId(e.target.value)}
+                    placeholder="e.g. 9876543210@paytm or yourname@ybl"
+                    className="w-full rounded-xl border border-amber-500/40 bg-slate-950 p-3 text-sm font-mono font-bold text-amber-300 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                  />
+                  <p className="mt-1 text-[11px] text-slate-400">
+                    Examples: <code className="text-amber-400">9876543210@paytm</code>, <code className="text-amber-400">9876543210@ybl</code>, <code className="text-amber-400">user@okaxis</code>
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-extrabold text-slate-300 mb-1.5">
+                    Account / Business Name
+                  </label>
+                  <input
+                    type="text"
+                    value={personalUpiName}
+                    onChange={(e) => setPersonalUpiName(e.target.value)}
+                    placeholder="e.g. SMM Panel Owner"
+                    className="w-full rounded-xl border border-slate-700 bg-slate-950 p-3 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+                  />
+                  <p className="mt-1 text-[11px] text-slate-400">
+                    Name displayed on PhonePe/Paytm/GPay when customers scan QR code
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                  Custom Static QR Code Image URL (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={personalQrUrl}
+                  onChange={(e) => setPersonalQrUrl(e.target.value)}
+                  placeholder="Leave empty to automatically generate live QR code from your UPI ID"
+                  className="w-full rounded-xl border border-slate-800 bg-slate-950 p-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500"
+                />
+              </div>
+
+              {/* Live Preview Box */}
+              {personalUpiId && (
+                <div className="rounded-xl bg-slate-950/90 p-4 border border-slate-800 flex items-center gap-4">
+                  <div className="h-20 w-20 bg-white p-1 rounded-lg shrink-0 border">
+                    <img
+                      src={
+                        personalQrUrl ||
+                        `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(
+                          `upi://pay?pa=${personalUpiId}&pn=${encodeURIComponent(
+                            personalUpiName || 'SMM Panel'
+                          )}&cu=INR`
+                        )}&size=150x150`
+                      }
+                      alt="Live UPI QR Preview"
+                      className="h-full w-full object-contain"
+                    />
+                  </div>
+                  <div className="text-xs">
+                    <span className="text-emerald-400 font-extrabold block mb-0.5">✓ Live QR Preview Active</span>
+                    <p className="text-slate-300">
+                      Customers depositing money will scan this QR code or copy UPI ID: <strong className="text-amber-300 font-mono text-xs">{personalUpiId}</strong> ({personalUpiName})
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={savingUpi}
+                className="w-full rounded-xl bg-amber-500 py-3 text-xs font-black text-slate-950 hover:bg-amber-400 shadow-lg shadow-amber-500/20 disabled:opacity-50 transition-all"
+              >
+                {savingUpi ? 'Updating UPI ID...' : 'Save Personal UPI ID & QR Settings'}
+              </button>
+            </form>
           </div>
 
           {/* Explanation Banner */}

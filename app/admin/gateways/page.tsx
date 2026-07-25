@@ -364,29 +364,41 @@ export default function AdminGatewaysPage() {
                 </div>
               </div>
 
-              {/* QR Preview */}
+              {/* QR Preview & Direct Save Button */}
               {personalUpiGw.upiId && (
-                <div className="mt-5 rounded-xl bg-slate-950/80 p-4 border border-slate-800 flex items-center gap-4">
-                  <div className="h-20 w-20 bg-white p-1 rounded-lg shrink-0">
-                    <img
-                      src={
-                        personalUpiGw.qrImageUrl ||
-                        `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(
-                          `upi://pay?pa=${personalUpiGw.upiId}&pn=${encodeURIComponent(
-                            personalUpiGw.upiName || 'SMM Panel'
-                          )}&cu=INR`
-                        )}&size=150x150`
-                      }
-                      alt="Live Dynamic QR Preview"
-                      className="h-full w-full object-contain"
-                    />
+                <div className="mt-5 rounded-xl bg-slate-950/80 p-4 border border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className="h-20 w-20 bg-white p-1 rounded-lg shrink-0 border">
+                      <img
+                        src={
+                          personalUpiGw.qrImageUrl ||
+                          `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(
+                            `upi://pay?pa=${personalUpiGw.upiId}&pn=${encodeURIComponent(
+                              personalUpiGw.upiName || 'SMM Panel'
+                            )}&cu=INR`
+                          )}&size=150x150`
+                        }
+                        alt="Live Dynamic QR Preview"
+                        className="h-full w-full object-contain"
+                      />
+                    </div>
+                    <div className="text-xs">
+                      <span className="text-emerald-400 font-bold block mb-0.5">✓ Live Dynamic QR Code Active</span>
+                      <p className="text-slate-300">
+                        Users scanning this QR code in user dashboard will send funds directly to: <strong className="text-amber-300 font-mono">{personalUpiGw.upiId}</strong> ({personalUpiGw.upiName || 'SMM Panel'})
+                      </p>
+                    </div>
                   </div>
-                  <div className="text-xs">
-                    <span className="text-emerald-400 font-bold block mb-0.5">✓ Live Dynamic QR Code Active</span>
-                    <p className="text-slate-300">
-                      Users scanning this QR code in user dashboard will send funds directly to: <strong className="text-amber-300 font-mono">{personalUpiGw.upiId}</strong>
-                    </p>
-                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleSaveGateways}
+                    disabled={saving}
+                    className="w-full sm:w-auto shrink-0 rounded-xl bg-amber-500 px-5 py-2.5 text-xs font-black text-slate-950 shadow-lg shadow-amber-500/20 hover:bg-amber-400 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+                  >
+                    <Save className="h-4 w-4" />
+                    <span>{saving ? 'Saving UPI...' : 'Save UPI Changes'}</span>
+                  </button>
                 </div>
               )}
             </div>

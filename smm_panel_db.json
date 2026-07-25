@@ -23,6 +23,18 @@
       "status": "active",
       "createdAt": "2026-07-23T15:23:09.828Z",
       "updatedAt": "2026-07-23T15:23:09.828Z"
+    },
+    {
+      "id": "usr_mrztlkon",
+      "username": "rdgfsdfg",
+      "email": "rdgfsdfg@gmail.com",
+      "role": "customer",
+      "balanceINR": 100,
+      "spentINR": 0,
+      "apiKey": "fame_key_qf3owh4othlmrztlkon",
+      "status": "active",
+      "createdAt": "2026-07-25T03:39:24.791Z",
+      "updatedAt": "2026-07-25T03:39:24.791Z"
     }
   ],
   "categories": [
@@ -3859,6 +3871,23 @@
   "priceAlerts": [],
   "gateways": [
     {
+      "id": "gw_personal_upi",
+      "name": "Personal UPI QR & UPI ID (Direct Bank)",
+      "code": "personal_upi",
+      "title": "Pay via Personal PhonePe / GPay / Paytm QR Code",
+      "description": "No merchant account required! Scan QR Code or copy UPI ID and enter 12-digit UTR to credit balance instantly.",
+      "logo": "https://cdn-icons-png.flaticon.com/512/825/825500.png",
+      "enabled": true,
+      "isTestMode": false,
+      "upiId": "9876543210@paytm",
+      "upiName": "SMM Panel Owner",
+      "qrImageUrl": "",
+      "minAmountINR": 10,
+      "maxAmountINR": 100000,
+      "feePercent": 0,
+      "requireApproval": true
+    },
+    {
       "id": "gw_phonepe",
       "name": "PhonePe Payment Gateway",
       "code": "phonepe",
@@ -3982,5 +4011,13 @@
     "whatsappSupport": "7050259916",
     "supportEmail": "support@fameprovider.com"
   },
-  "logs": []
+  "logs": [
+    {
+      "id": "log_mrztlkon",
+      "type": "SYSTEM",
+      "level": "info",
+      "message": "New user registered: rdgfsdfg (rdgfsdfg@gmail.com)",
+      "createdAt": "2026-07-25T03:39:24.791Z"
+    }
+  ]
 }

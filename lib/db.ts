@@ -368,13 +368,20 @@ class SMMDatabase {
         const raw = fs.readFileSync(DB_FILE, 'utf-8');
         const parsed = JSON.parse(raw);
         if (parsed && typeof parsed === 'object') {
+          const loadedGateways: PaymentGatewayConfig[] = parsed.gateways || defaultGateways;
+          for (const defaultGw of defaultGateways) {
+            if (!loadedGateways.some((g) => g.code === defaultGw.code)) {
+              loadedGateways.unshift(defaultGw);
+            }
+          }
+
           this.data = {
             users: parsed.users || defaultUsers,
             categories: parsed.categories || defaultCategories,
             services: parsed.services || defaultServices,
             orders: parsed.orders || defaultOrders,
             priceAlerts: parsed.priceAlerts || [],
-            gateways: parsed.gateways || defaultGateways,
+            gateways: loadedGateways,
             transactions: parsed.transactions || [],
             tickets: parsed.tickets || defaultTickets,
             settings: { ...defaultSettings, ...(parsed.settings || {}) },
