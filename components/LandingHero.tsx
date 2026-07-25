@@ -102,9 +102,7 @@ export default function LandingHero({ onLoginSuccess }: LandingHeroProps) {
 
             <p className="mt-4 text-sm text-slate-300 sm:text-base max-w-2xl leading-relaxed">
               Boost your Instagram followers, Reel views, YouTube watch-time & Telegram channel members directly from the main API supplier in Indian Rupees (₹).
-            </p>
-
-            {/* Key feature points */}
+            </p>            {/* Key feature points */}
             <div className="mt-6 grid grid-cols-2 gap-3 max-w-lg text-xs font-medium text-slate-300">
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
@@ -148,7 +146,7 @@ export default function LandingHero({ onLoginSuccess }: LandingHeroProps) {
                       type="text"
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
-                      placeholder="Enter username"
+                      placeholder="Enter Username"
                       className="w-full rounded-xl border border-slate-800 bg-slate-950/80 py-2.5 pl-9 pr-4 text-sm text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                     />
                   </div>

@@ -22,21 +22,25 @@ export default function AdminSettingsPage() {
         const parsed = JSON.parse(storedUser);
         if (parsed.role === 'super_admin') {
           setAdminUser(parsed);
-          fetch('/api/admin?action=overview')
-            .then((res) => res.json())
-            .then((data) => {
-              if (data.settings) {
-                setProviderApiKey(data.settings.fameProviderApiKey);
-                setUsdRate(String(data.settings.usdToInrRate));
-                setMargin(String(data.settings.globalMarginPercent));
-              }
-            });
+          fetchSettings();
           return;
         }
       } catch (e) {}
     }
     window.location.href = '/login?error=admin_access_required';
   }, []);
+
+  const fetchSettings = () => {
+    fetch('/api/admin?action=overview')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.settings) {
+          setProviderApiKey(data.settings.fameProviderApiKey);
+          setUsdRate(String(data.settings.usdToInrRate));
+          setMargin(String(data.settings.globalMarginPercent));
+        }
+      });
+  };
 
   const handleTestApiKey = async () => {
     setTestingKey(true);
@@ -94,6 +98,25 @@ export default function AdminSettingsPage() {
           </div>
 
           {msg && <div className="mb-6 rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-3 text-xs text-emerald-400 font-semibold">{msg}</div>}
+
+          {/* Deposit UPI Banner */}
+          <div className="mb-6 rounded-2xl border border-amber-500/40 bg-amber-950/30 p-4 text-xs text-amber-200 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/20 text-amber-400 font-bold text-lg">
+                💳
+              </div>
+              <div>
+                <span className="font-bold text-white block mb-0.5">Deposit UPI & QR Code Settings</span>
+                <p className="text-[11px] text-slate-300">Edit your Personal PhonePe, Paytm, Google Pay UPI ID or Merchant Gateways for wallet recharges.</p>
+              </div>
+            </div>
+            <a
+              href="/admin/gateways"
+              className="shrink-0 rounded-xl bg-amber-500 px-4 py-2 text-xs font-bold text-slate-950 hover:bg-amber-400 transition-all shadow-md"
+            >
+              Edit UPI ID & QR →
+            </a>
+          </div>
 
           {/* Explanation Banner */}
           <div className="mb-6 rounded-2xl border border-blue-500/30 bg-blue-500/10 p-4 text-xs text-blue-200 flex items-start gap-3">

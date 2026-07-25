@@ -14,7 +14,7 @@ export default function AdminGatewaysPage() {
   const [saving, setSaving] = useState(false);
 
   const fetchGateways = () => {
-    fetch('/api/wallet?userId=usr_demo_002')
+    fetch('/api/wallet')
       .then((res) => res.json())
       .then((data) => {
         if (data.gateways) setGateways(data.gateways);
