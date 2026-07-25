@@ -13,23 +13,46 @@ export default function WalletPage() {
   const [gateways, setGateways] = useState<PaymentGatewayConfig[]>([]);
   const [isDepositOpen, setIsDepositOpen] = useState(false);
 
-  useEffect(() => {
-    fetch('/api/auth', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'login', username: 'rajat_creator' }),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.user) setUser(data.user);
-      });
-
-    fetch('/api/wallet?userId=usr_demo_002')
+  const fetchWalletData = (userId: string) => {
+    fetch(`/api/wallet?userId=${userId}`)
       .then((res) => res.json())
       .then((data) => {
         if (data.transactions) setTransactions(data.transactions);
         if (data.gateways) setGateways(data.gateways);
       });
+  };
+
+  useEffect(() => {
+    const storedUser = typeof window !== 'undefined' ? localStorage.getItem('smm_user') : null;
+    let currentUser: User | null = null;
+    if (storedUser) {
+      try {
+        currentUser = JSON.parse(storedUser);
+      } catch (e) {}
+    }
+
+    if (!currentUser) {
+      window.location.href = '/login';
+      return;
+    }
+
+    fetch('/api/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'get_user', userId: currentUser.id }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.user) {
+          setUser(data.user);
+          localStorage.setItem('smm_user', JSON.stringify(data.user));
+        } else {
+          setUser(currentUser);
+        }
+      })
+      .catch(() => setUser(currentUser));
+
+    fetchWalletData(currentUser.id);
   }, []);
 
   return (
@@ -150,14 +173,14 @@ export default function WalletPage() {
       <IndianPaymentModal
         isOpen={isDepositOpen}
         onClose={() => setIsDepositOpen(false)}
-        userId={user?.id || 'usr_demo_002'}
+        userId={user?.id || ''}
         onPaymentSuccess={(newBal) => {
-          if (user) setUser({ ...user, balanceINR: newBal });
-          fetch('/api/wallet?userId=usr_demo_002')
-            .then((res) => res.json())
-            .then((data) => {
-              if (data.transactions) setTransactions(data.transactions);
-            });
+          if (user) {
+            const updated = { ...user, balanceINR: newBal };
+            setUser(updated);
+            localStorage.setItem('smm_user', JSON.stringify(updated));
+            fetchWalletData(user.id);
+          }
         }}
       />
     </div>

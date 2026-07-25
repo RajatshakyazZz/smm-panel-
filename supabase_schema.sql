@@ -148,22 +148,43 @@ ALTER TABLE public.alerts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.refill_requests ENABLE ROW LEVEL SECURITY;
 
 -- PUBLIC READ & SERVICE ROLE FULL ACCESS POLICIES
+DROP POLICY IF EXISTS "Public Read Settings" ON public.settings;
 CREATE POLICY "Public Read Settings" ON public.settings FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Service Role Full Settings" ON public.settings;
 CREATE POLICY "Service Role Full Settings" ON public.settings FOR ALL USING (true);
 
+DROP POLICY IF EXISTS "Public Read Categories" ON public.categories;
 CREATE POLICY "Public Read Categories" ON public.categories FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Service Role Full Categories" ON public.categories;
 CREATE POLICY "Service Role Full Categories" ON public.categories FOR ALL USING (true);
 
+DROP POLICY IF EXISTS "Public Read Services" ON public.services;
 CREATE POLICY "Public Read Services" ON public.services FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Service Role Full Services" ON public.services;
 CREATE POLICY "Service Role Full Services" ON public.services FOR ALL USING (true);
 
+DROP POLICY IF EXISTS "Allow All Users Select" ON public.users;
 CREATE POLICY "Allow All Users Select" ON public.users FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Allow All Users Modify" ON public.users;
 CREATE POLICY "Allow All Users Modify" ON public.users FOR ALL USING (true);
 
+DROP POLICY IF EXISTS "Allow All Orders" ON public.orders;
 CREATE POLICY "Allow All Orders" ON public.orders FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Allow All Transactions" ON public.transactions;
 CREATE POLICY "Allow All Transactions" ON public.transactions FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Allow All Tickets" ON public.tickets;
 CREATE POLICY "Allow All Tickets" ON public.tickets FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Allow All Alerts" ON public.alerts;
 CREATE POLICY "Allow All Alerts" ON public.alerts FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Allow All Refills" ON public.refill_requests;
 CREATE POLICY "Allow All Refills" ON public.refill_requests FOR ALL USING (true);
 
 -- INITIAL SEED SETTINGS

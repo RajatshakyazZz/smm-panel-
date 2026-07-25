@@ -15,8 +15,8 @@ export default function OrderHistoryPage() {
   const [syncing, setSyncing] = useState(false);
   const [actionMsg, setActionMsg] = useState('');
 
-  const fetchOrders = () => {
-    fetch('/api/orders?userId=usr_demo_002')
+  const fetchOrders = (userId: string) => {
+    fetch(`/api/orders?userId=${userId}`)
       .then((res) => res.json())
       .then((data) => {
         if (data.orders) setOrders(data.orders);
@@ -24,17 +24,36 @@ export default function OrderHistoryPage() {
   };
 
   useEffect(() => {
+    const storedUser = typeof window !== 'undefined' ? localStorage.getItem('smm_user') : null;
+    let currentUser: User | null = null;
+    if (storedUser) {
+      try {
+        currentUser = JSON.parse(storedUser);
+      } catch (e) {}
+    }
+
+    if (!currentUser) {
+      window.location.href = '/login';
+      return;
+    }
+
     fetch('/api/auth', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'login', username: 'rajat_creator' }),
+      body: JSON.stringify({ action: 'get_user', userId: currentUser.id }),
     })
       .then((res) => res.json())
       .then((data) => {
-        if (data.user) setUser(data.user);
-      });
+        if (data.user) {
+          setUser(data.user);
+          localStorage.setItem('smm_user', JSON.stringify(data.user));
+        } else {
+          setUser(currentUser);
+        }
+      })
+      .catch(() => setUser(currentUser));
 
-    fetchOrders();
+    fetchOrders(currentUser.id);
   }, []);
 
   const handleSyncStatus = async () => {
@@ -47,7 +66,7 @@ export default function OrderHistoryPage() {
         body: JSON.stringify({ action: 'sync' }),
       });
       const data = await res.json();
-      fetchOrders();
+      if (user) fetchOrders(user.id);
       setActionMsg(`Synced ${data.updatedCount || 0} order statuses with FameProvider API!`);
     } catch (err) {
       setActionMsg('Failed to sync statuses.');
@@ -219,9 +238,13 @@ export default function OrderHistoryPage() {
       <IndianPaymentModal
         isOpen={isDepositOpen}
         onClose={() => setIsDepositOpen(false)}
-        userId={user?.id || 'usr_demo_002'}
+        userId={user?.id || ''}
         onPaymentSuccess={(newBal) => {
-          if (user) setUser({ ...user, balanceINR: newBal });
+          if (user) {
+            const updated = { ...user, balanceINR: newBal };
+            setUser(updated);
+            localStorage.setItem('smm_user', JSON.stringify(updated));
+          }
         }}
       />
     </div>

@@ -17,15 +17,31 @@ export default function ServicesPage() {
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    fetch('/api/auth', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'login', username: 'rajat_creator' }),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.user) setUser(data.user);
-      });
+    const storedUser = typeof window !== 'undefined' ? localStorage.getItem('smm_user') : null;
+    let currentUser: User | null = null;
+    if (storedUser) {
+      try {
+        currentUser = JSON.parse(storedUser);
+      } catch (e) {}
+    }
+
+    if (currentUser) {
+      fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'get_user', userId: currentUser.id }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.user) {
+            setUser(data.user);
+            localStorage.setItem('smm_user', JSON.stringify(data.user));
+          } else {
+            setUser(currentUser);
+          }
+        })
+        .catch(() => setUser(currentUser));
+    }
 
     fetch('/api/services')
       .then((res) => res.json())
@@ -169,9 +185,13 @@ export default function ServicesPage() {
       <IndianPaymentModal
         isOpen={isDepositOpen}
         onClose={() => setIsDepositOpen(false)}
-        userId={user?.id || 'usr_demo_002'}
+        userId={user?.id || ''}
         onPaymentSuccess={(newBal) => {
-          if (user) setUser({ ...user, balanceINR: newBal });
+          if (user) {
+            const updated = { ...user, balanceINR: newBal };
+            setUser(updated);
+            localStorage.setItem('smm_user', JSON.stringify(updated));
+          }
         }}
       />
     </div>

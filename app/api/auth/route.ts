@@ -4,7 +4,18 @@ import { db } from '@/lib/db';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { action, username, email, password, role } = body;
+    const { action, username, email, password, role, userId } = body;
+
+    if (action === 'get_user') {
+      if (!userId) {
+        return NextResponse.json({ error: 'userId is required' }, { status: 400 });
+      }
+      const user = db.getUserById(userId);
+      if (!user) {
+        return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      }
+      return NextResponse.json({ success: true, user });
+    }
 
     if (action === 'login') {
       if (!username) {

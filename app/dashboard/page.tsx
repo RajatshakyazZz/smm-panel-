@@ -35,16 +35,35 @@ export default function UserDashboard() {
   const [orderMsg, setOrderMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
-    // Fetch initial user auth or use default demo user
+    const storedUser = typeof window !== 'undefined' ? localStorage.getItem('smm_user') : null;
+    let currentUser: User | null = null;
+    if (storedUser) {
+      try {
+        currentUser = JSON.parse(storedUser);
+      } catch (e) {}
+    }
+
+    if (!currentUser) {
+      window.location.href = '/login';
+      return;
+    }
+
+    // Refresh user details from DB
     fetch('/api/auth', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'login', username: 'rajat_creator' }),
+      body: JSON.stringify({ action: 'get_user', userId: currentUser.id }),
     })
       .then((res) => res.json())
       .then((data) => {
-        if (data.user) setUser(data.user);
-      });
+        if (data.user) {
+          setUser(data.user);
+          localStorage.setItem('smm_user', JSON.stringify(data.user));
+        } else {
+          setUser(currentUser);
+        }
+      })
+      .catch(() => setUser(currentUser));
 
     // Fetch services & categories
     fetch('/api/services')
@@ -64,8 +83,8 @@ export default function UserDashboard() {
         }
       });
 
-    // Fetch orders
-    fetch('/api/orders?userId=usr_demo_002')
+    // Fetch orders for logged in user
+    fetch(`/api/orders?userId=${currentUser.id}`)
       .then((res) => res.json())
       .then((data) => {
         if (data.orders) setOrders(data.orders);
@@ -430,9 +449,13 @@ export default function UserDashboard() {
       <IndianPaymentModal
         isOpen={isDepositOpen}
         onClose={() => setIsDepositOpen(false)}
-        userId={user?.id || 'usr_demo_002'}
+        userId={user?.id || ''}
         onPaymentSuccess={(newBal) => {
-          if (user) setUser({ ...user, balanceINR: newBal });
+          if (user) {
+            const updated = { ...user, balanceINR: newBal };
+            setUser(updated);
+            localStorage.setItem('smm_user', JSON.stringify(updated));
+          }
         }}
       />
     </div>
