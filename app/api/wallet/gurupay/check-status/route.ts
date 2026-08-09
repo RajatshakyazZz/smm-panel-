@@ -29,10 +29,11 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // 2. Query GuruPay API check-status endpoint
+    // 2. Query GuruPay API check-status endpoint strictly per spec
     const gateways = db.getGateways();
     const gurupayGw = gateways.find((g) => g.code === 'gurupay');
-    const apiKey = gurupayGw?.apiKey || 'guruf6ab4e18c70cfd67938117c816b1b2';
+    const dbKey = gurupayGw?.apiKey?.trim();
+    const apiKey = dbKey && dbKey.length > 5 ? dbKey : 'guruf6ab4e18c70cfd67938117c816b1b2';
 
     const gurupayRes = await fetch('https://gurupaygateway.com/api/check-status', {
       method: 'POST',
@@ -51,7 +52,10 @@ export async function POST(req: NextRequest) {
     // Schema: { status: "success", data: { payment_status: "success", utr: "...", amount: 100.00 } }
     const isPaid =
       gurupayData?.status === 'success' &&
-      (gurupayData?.data?.payment_status === 'success' || gurupayData?.data?.status === 'success' || gurupayData?.data?.paid === true);
+      (gurupayData?.data?.payment_status === 'success' ||
+        gurupayData?.data?.status === 'success' ||
+        gurupayData?.payment_status === 'success' ||
+        gurupayData?.data?.paid === true);
 
     const utr = gurupayData?.data?.utr || gurupayData?.utr || 'N/A';
 

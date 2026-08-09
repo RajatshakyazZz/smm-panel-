@@ -17,7 +17,8 @@ export async function GET(req: NextRequest) {
     // Verify on backend using GuruPay Check Status API
     const gateways = db.getGateways();
     const gurupayGw = gateways.find((g) => g.code === 'gurupay');
-    const apiKey = gurupayGw?.apiKey || 'guruf6ab4e18c70cfd67938117c816b1b2';
+    const dbKey = gurupayGw?.apiKey?.trim();
+    const apiKey = dbKey && dbKey.length > 5 ? dbKey : 'guruf6ab4e18c70cfd67938117c816b1b2';
 
     const gurupayRes = await fetch('https://gurupaygateway.com/api/check-status', {
       method: 'POST',
