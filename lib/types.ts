@@ -88,12 +88,12 @@ export interface PriceAlert {
 export interface PaymentGatewayConfig {
   id: string;
   name: string;
-  code: 'personal_upi' | 'phonepe' | 'razorpay' | 'paytm' | 'cashfree' | 'easebuzz' | 'payu';
+  code: string;
   title: string;
   description: string;
   logo: string;
   enabled: boolean;
-  isTestMode: boolean;
+  isTestMode?: boolean;
   merchantId?: string;
   apiKey?: string;
   apiSecret?: string;

@@ -245,7 +245,22 @@ const defaultServices: SMMService[] = [
   },
 ];
 
-const defaultGateways: PaymentGatewayConfig[] = [];
+const defaultGateways: PaymentGatewayConfig[] = [
+  {
+    id: 'gw_gurupay',
+    name: 'GuruPay Payment Gateway',
+    code: 'gurupay',
+    title: 'GuruPay Instant UPI Auto-Credit',
+    description: 'Instant UPI, PhonePe, Google Pay, Paytm & NetBanking Payment',
+    logo: 'https://gurupaygateway.com/favicon.ico',
+    enabled: true,
+    isTestMode: false,
+    apiKey: 'guruf6ab4e18c70cfd67938117c816b1b2',
+    minAmountINR: 10,
+    maxAmountINR: 100000,
+    feePercent: 0,
+  },
+];
 
 const defaultOrders: SMMOrder[] = [];
 
@@ -277,6 +292,9 @@ class SMMDatabase {
         const parsed = JSON.parse(raw);
         if (parsed && typeof parsed === 'object') {
           const loadedGateways: PaymentGatewayConfig[] = Array.isArray(parsed.gateways) ? parsed.gateways : defaultGateways;
+          if (!loadedGateways.some((g) => g.code === 'gurupay')) {
+            loadedGateways.unshift(defaultGateways[0]);
+          }
 
           this.data = {
             users: parsed.users || defaultUsers,
@@ -917,6 +935,77 @@ class SMMDatabase {
     this.saveToDisk();
 
     return { success: true, message: `Deposit request rejected for ${tx.username}.` };
+  }
+
+  createPendingGuruPayOrder(userId: string, amountINR: number, orderId: string): WalletTransaction | { error: string } {
+    const user = this.getUserById(userId);
+    if (!user) return { error: 'User not found' };
+
+    const gw = this.data.gateways.find((g) => g.code === 'gurupay') || {
+      id: 'gw_gurupay',
+      name: 'GuruPay Payment Gateway',
+      code: 'gurupay',
+      title: 'GuruPay Instant UPI',
+      description: 'GuruPay Instant UPI Gateway',
+      logo: 'https://gurupaygateway.com/favicon.ico',
+      enabled: true,
+      minAmountINR: 10,
+      maxAmountINR: 100000,
+      feePercent: 0,
+    };
+
+    if (!gw.enabled) return { error: 'GuruPay payment gateway is currently disabled' };
+
+    const tx: WalletTransaction = {
+      id: 'tx_gp_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 5),
+      userId: user.id,
+      username: user.username,
+      gatewayCode: 'gurupay',
+      gatewayName: 'GuruPay Payment Gateway',
+      amountINR,
+      feeINR: 0,
+      netINR: amountINR,
+      status: 'PENDING',
+      transactionRef: orderId,
+      createdAt: new Date().toISOString(),
+    };
+
+    this.data.transactions.unshift(tx);
+    this.addLog('WALLET', 'info', `Created GuruPay payment order ${orderId} for ₹${amountINR} by ${user.username}`);
+    this.saveToDisk();
+    return tx;
+  }
+
+  getGuruPayTransactionByOrderId(orderId: string): WalletTransaction | undefined {
+    return this.data.transactions.find(
+      (t) => t.gatewayCode === 'gurupay' && (t.transactionRef === orderId || t.transactionRef.startsWith(orderId))
+    );
+  }
+
+  completeGuruPayOrder(orderId: string, utr?: string): { success: boolean; tx?: WalletTransaction; message?: string; error?: string } {
+    const tx = this.data.transactions.find(
+      (t) => t.gatewayCode === 'gurupay' && (t.transactionRef === orderId || t.transactionRef.startsWith(orderId))
+    );
+    if (!tx) return { success: false, error: 'Transaction order not found' };
+
+    if (tx.status === 'SUCCESS') {
+      return { success: true, tx, message: 'Already completed and credited' };
+    }
+
+    const user = this.getUserById(tx.userId);
+    if (!user) return { success: false, error: 'User not found' };
+
+    user.balanceINR = Number((user.balanceINR + tx.netINR).toFixed(2));
+    user.updatedAt = new Date().toISOString();
+    tx.status = 'SUCCESS';
+    if (utr) {
+      tx.transactionRef = `${orderId} (UTR: ${utr})`;
+    }
+
+    this.addLog('WALLET', 'success', `⚡ GuruPay Instant Payment Verified! ₹${tx.amountINR} credited to ${user.username} (Order: ${orderId}, UTR: ${utr || 'N/A'})`);
+    this.saveToDisk();
+
+    return { success: true, tx, message: `₹${tx.amountINR} instantly credited to your wallet!` };
   }
 
   getTransactions(userId?: string): WalletTransaction[] {

@@ -24,9 +24,11 @@ export default function IndianPaymentModal({
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isPendingApproval, setIsPendingApproval] = useState(false);
-  const [step, setStep] = useState<'form' | 'qr' | 'success'>('form');
+  const [step, setStep] = useState<'form' | 'qr' | 'gurupay' | 'success'>('form');
   const [error, setError] = useState('');
   const [transactionRef, setTransactionRef] = useState('');
+  const [guruPayOrder, setGuruPayOrder] = useState<{ order_id: string; payment_url: string } | null>(null);
+  const [checkingGuruPay, setCheckingGuruPay] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -37,14 +39,28 @@ export default function IndianPaymentModal({
             const active = data.gateways.filter((g: PaymentGatewayConfig) => g.enabled);
             setGateways(active);
             if (active.length > 0) {
+              const hasGuru = active.find((g: PaymentGatewayConfig) => g.code === 'gurupay');
               const hasPersonal = active.find((g: PaymentGatewayConfig) => g.code === 'personal_upi');
-              setSelectedGateway(hasPersonal ? 'personal_upi' : active[0].code);
+              setSelectedGateway(hasGuru ? 'gurupay' : hasPersonal ? 'personal_upi' : active[0].code);
             }
           }
         })
         .catch((err) => console.error('Error fetching gateways:', err));
     }
   }, [isOpen]);
+
+  // Auto-poll GuruPay status when step is 'gurupay'
+  useEffect(() => {
+    let interval: any;
+    if (step === 'gurupay' && guruPayOrder) {
+      interval = setInterval(() => {
+        verifyGuruPayStatus(guruPayOrder.order_id, true);
+      }, 3500);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [step, guruPayOrder]);
 
   if (!isOpen) return null;
 
@@ -76,7 +92,7 @@ export default function IndianPaymentModal({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleProceedPayment = () => {
+  const handleProceedPayment = async () => {
     const amt = parseFloat(amountINR);
     if (isNaN(amt) || amt < (currentGw.minAmountINR || 10)) {
       setError(`Minimum deposit amount is ₹${currentGw.minAmountINR || 10}`);
@@ -84,7 +100,59 @@ export default function IndianPaymentModal({
     }
 
     setError('');
+
+    if (selectedGateway === 'gurupay') {
+      setLoading(true);
+      try {
+        const res = await fetch('/api/wallet/gurupay/create-order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, amountINR: amt }),
+        });
+        const data = await res.json();
+        if (data.success && data.payment_url) {
+          setGuruPayOrder({ order_id: data.order_id, payment_url: data.payment_url });
+          setTransactionRef(data.order_id);
+          setStep('gurupay');
+          // Automatically open payment page
+          window.open(data.payment_url, '_blank');
+        } else {
+          setError(data.error || 'Failed to initiate GuruPay payment');
+        }
+      } catch (err) {
+        setError('Network error connecting to GuruPay.');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
     setStep('qr');
+  };
+
+  const verifyGuruPayStatus = async (orderId: string, silent = false) => {
+    if (!silent) setCheckingGuruPay(true);
+    try {
+      const res = await fetch('/api/wallet/gurupay/check-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order_id: orderId }),
+      });
+      const data = await res.json();
+      if (data.success && data.paid) {
+        setIsPendingApproval(false);
+        if (data.newBalance) {
+          onPaymentSuccess(data.newBalance);
+        }
+        setStep('success');
+      } else if (!silent) {
+        setError(data.message || 'Payment still pending. Please complete payment in the opened tab.');
+      }
+    } catch (err) {
+      if (!silent) setError('Failed to verify status. Please try again.');
+    } finally {
+      if (!silent) setCheckingGuruPay(false);
+    }
   };
 
   const handleConfirmUtrPayment = async () => {
@@ -366,6 +434,86 @@ export default function IndianPaymentModal({
                 className="w-2/3 rounded-xl bg-emerald-600 py-2.5 text-xs font-bold text-white shadow-lg shadow-emerald-600/30 hover:bg-emerald-500 disabled:opacity-50"
               >
                 {loading ? 'Verifying UTR...' : `Confirm Payment ₹${amountINR}`}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 2B: GURUPAY AUTOMATIC REDIRECT & LIVE STATUS VERIFICATION */}
+        {step === 'gurupay' && guruPayOrder && (
+          <div className="text-center py-2 space-y-4">
+            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-1.5 text-xs font-extrabold text-emerald-400">
+              <Sparkles className="h-4 w-4 text-emerald-400" />
+              <span>GuruPay Automatic Payment Gateway</span>
+            </div>
+
+            <h3 className="text-xl font-black text-white">Complete Payment of ₹{amountINR}</h3>
+            <p className="text-xs text-slate-300">
+              A secure GuruPay checkout page has opened in a new tab. Complete your UPI or QR payment there.
+            </p>
+
+            <div className="rounded-2xl border border-slate-800 bg-slate-950 p-5 text-left space-y-3">
+              <div className="flex justify-between items-center border-b border-slate-800 pb-2.5 text-xs">
+                <span className="text-slate-400">Order Reference ID:</span>
+                <span className="font-mono font-bold text-amber-300">{guruPayOrder.order_id}</span>
+              </div>
+
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-slate-400">Amount Payable:</span>
+                <span className="font-black text-emerald-400 text-base">₹{amountINR}</span>
+              </div>
+
+              <div className="pt-2">
+                <a
+                  href={guruPayOrder.payment_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 py-3 text-xs font-extrabold text-white shadow-lg shadow-emerald-600/30 hover:from-emerald-500 hover:to-teal-500 transition-all"
+                >
+                  <span>Re-open GuruPay Payment Page</span>
+                  <ExternalLink className="h-4 w-4" />
+                </a>
+              </div>
+            </div>
+
+            <div className="rounded-xl bg-blue-500/10 border border-blue-500/20 p-3.5 text-left flex items-start gap-3">
+              <div className="mt-0.5 animate-spin h-4 w-4 rounded-full border-2 border-blue-400 border-t-transparent shrink-0" />
+              <div className="text-xs">
+                <span className="font-bold text-blue-300 block">Auto-Checking Payment Status...</span>
+                <span className="text-slate-400 text-[11px]">
+                  As soon as you pay on GuruPay, your wallet will automatically credit without requiring manual UTR entry!
+                </span>
+              </div>
+            </div>
+
+            {error && (
+              <div className="text-xs font-bold text-red-400 bg-red-500/10 border border-red-500/20 p-2.5 rounded-lg text-left">
+                {error}
+              </div>
+            )}
+
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setStep('form')}
+                className="w-1/3 rounded-xl border border-slate-800 bg-slate-950 py-2.5 text-xs font-semibold text-slate-300 hover:bg-slate-800"
+              >
+                Back
+              </button>
+              <button
+                type="button"
+                onClick={() => verifyGuruPayStatus(guruPayOrder.order_id, false)}
+                disabled={checkingGuruPay}
+                className="w-2/3 rounded-xl bg-emerald-600 py-2.5 text-xs font-bold text-white shadow-lg shadow-emerald-600/30 hover:bg-emerald-500 disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {checkingGuruPay ? (
+                  <>
+                    <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    <span>Verifying...</span>
+                  </>
+                ) : (
+                  <span>I Have Paid / Check Status</span>
+                )}
               </button>
             </div>
           </div>
