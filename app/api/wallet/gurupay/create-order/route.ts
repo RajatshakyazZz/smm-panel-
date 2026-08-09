@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Get GuruPay Gateway config from DB or fallback to default
+    // Get GuruPay Gateway config from DB
     const gateways = db.getGateways();
     const gurupayGw = gateways.find((g) => g.code === 'gurupay');
     const apiKey = gurupayGw?.apiKey || 'guruf6ab4e18c70cfd67938117c816b1b2';
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Generate unique order ID
-    const orderId = `ORD_GP_${Date.now()}_${Math.floor(1000 + Math.random() * 9000)}`;
+    const orderId = `ORD_${Date.now()}_${Math.floor(1000 + Math.random() * 9000)}`;
 
     // Create pending transaction in local database
     const pendingTx = db.createPendingGuruPayOrder(userId, numAmount, orderId);
@@ -42,9 +42,9 @@ export async function POST(req: NextRequest) {
 
     // Determine public origin for callback_url
     const origin = req.headers.get('origin') || req.nextUrl.origin || 'https://smm-panel.com';
-    const callbackUrl = `${origin}/api/wallet/gurupay/webhook`;
+    const callbackUrl = `${origin}/api/wallet/gurupay/callback?order_id=${orderId}`;
 
-    // Call GuruPay Create Order API
+    // Call GuruPay Create Order API matching official spec
     const gurupayRes = await fetch('https://gurupaygateway.com/api/create-order', {
       method: 'POST',
       headers: {
@@ -55,47 +55,33 @@ export async function POST(req: NextRequest) {
         amount: numAmount.toFixed(2),
         order_id: orderId,
         customer_name: user.username || user.email || 'SMM Customer',
+        description: 'SMM Panel Wallet Balance Recharge',
         callback_url: callbackUrl,
       }),
     });
 
     const gurupayData = await gurupayRes.json().catch(() => null);
+    console.log('GuruPay Create Order Raw Response:', gurupayData);
 
-    console.log('GuruPay API Create Order Response:', gurupayData);
-
+    // Extract payment_url according to official response schema: { status: "success", data: { payment_url: "..." } }
     const paymentUrl =
+      gurupayData?.data?.payment_url ||
       gurupayData?.payment_url ||
       gurupayData?.payment_link ||
-      gurupayData?.url ||
-      gurupayData?.pay_url ||
-      gurupayData?.data?.payment_url ||
-      gurupayData?.data?.payment_link ||
-      (gurupayData?.payment_id ? `https://gurupaygateway.com/pay/${gurupayData.payment_id}` : null) ||
-      (gurupayData?.id ? `https://gurupaygateway.com/pay/${gurupayData.id}` : null);
+      (gurupayData?.data?.token ? `https://gurupaygateway.com/pay/${gurupayData.data.token}` : null);
 
-    const isSuccess =
-      gurupayData?.status === 'success' ||
-      gurupayData?.status === 'SUCCESS' ||
-      gurupayData?.status === true ||
-      gurupayData?.success === true ||
-      gurupayData?.message?.toLowerCase().includes('success') ||
-      Boolean(paymentUrl);
-
-    if (isSuccess) {
-      const finalPaymentUrl = paymentUrl || `https://gurupaygateway.com/pay/${orderId}`;
+    if (gurupayData?.status === 'success' && paymentUrl) {
       return NextResponse.json({
         success: true,
         order_id: orderId,
-        payment_url: finalPaymentUrl,
+        payment_url: paymentUrl,
         amount: numAmount,
-        raw: gurupayData,
       });
     }
 
-    // If API returned an actual error
     return NextResponse.json(
       {
-        error: gurupayData?.message || gurupayData?.error || 'Failed to generate GuruPay payment link. Please check your API key.',
+        error: gurupayData?.message || 'Failed to generate GuruPay payment URL. Please check your X-Guru-Key.',
         raw: gurupayData,
       },
       { status: 400 }

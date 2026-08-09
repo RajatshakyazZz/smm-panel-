@@ -46,28 +46,36 @@ export async function POST(req: NextRequest) {
     });
 
     const gurupayData = await gurupayRes.json().catch(() => null);
+    console.log('GuruPay Check Status Raw Response:', gurupayData);
 
-    if (gurupayData && gurupayData.status === 'success') {
+    // Schema: { status: "success", data: { payment_status: "success", utr: "...", amount: 100.00 } }
+    const isPaid =
+      gurupayData?.status === 'success' &&
+      (gurupayData?.data?.payment_status === 'success' || gurupayData?.data?.status === 'success' || gurupayData?.data?.paid === true);
+
+    const utr = gurupayData?.data?.utr || gurupayData?.utr || 'N/A';
+
+    if (isPaid) {
       // Complete transaction and credit user balance instantly!
-      const res = db.completeGuruPayOrder(targetOrderId, gurupayData.utr);
+      const res = db.completeGuruPayOrder(targetOrderId, utr);
       const user = db.getUserById(tx.userId);
 
       return NextResponse.json({
         success: true,
         status: 'success',
         paid: true,
-        utr: gurupayData.utr,
-        amount: gurupayData.amount || tx.amountINR,
+        utr: utr,
+        amount: gurupayData?.data?.amount || tx.amountINR,
         newBalance: user?.balanceINR,
-        message: '⚡ Payment successfully verified via GuruPay! Your balance has been credited.',
+        message: '⚡ Payment successfully verified via GuruPay! Your wallet balance has been credited.',
       });
     }
 
     return NextResponse.json({
       success: true,
-      status: gurupayData?.status || 'pending',
+      status: gurupayData?.data?.payment_status || gurupayData?.status || 'pending',
       paid: false,
-      message: 'Payment pending. Please complete payment on GuruPay.',
+      message: 'Payment pending. Please complete payment on the GuruPay page.',
     });
   } catch (err: any) {
     console.error('GuruPay Check Status Error:', err);
