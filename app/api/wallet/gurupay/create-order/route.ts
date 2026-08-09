@@ -86,14 +86,19 @@ export async function POST(req: NextRequest) {
     }
 
     // If API returned an error, report the EXACT error from GuruPay
-    const errorMessage =
+    let errorMessage =
       gurupayData?.message ||
       gurupayData?.error ||
       `GuruPay API returned error status (${gurupayRes.status}). Please verify X-Guru-Key: ${apiKey}`;
 
+    if (errorMessage.toLowerCase().includes('order limit')) {
+      errorMessage = '⚠️ GuruPay daily order limit reached on GuruPay.com API key. Please use Direct UPI QR payment below or update the GuruPay API Key in Admin Settings.';
+    }
+
     return NextResponse.json(
       {
         error: errorMessage,
+        isOrderLimit: errorMessage.toLowerCase().includes('order limit'),
         raw: gurupayData,
       },
       { status: 400 }

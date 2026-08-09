@@ -260,9 +260,32 @@ export default function IndianPaymentModal({
             </div>
 
             {error && (
-              <div className="mb-4 flex items-center gap-2 rounded-lg bg-red-500/10 border border-red-500/20 p-3 text-xs text-red-400">
-                <AlertCircle className="h-4 w-4 shrink-0" />
-                <span>{error}</span>
+              <div className="mb-4 space-y-2.5 rounded-xl bg-red-500/10 border border-red-500/30 p-3.5 text-xs text-red-400">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 shrink-0 text-red-400" />
+                  <span className="font-semibold">{error}</span>
+                </div>
+
+                {error.toLowerCase().includes('limit') && (
+                  <div className="pt-2 border-t border-red-500/20">
+                    <p className="text-[11px] text-slate-300 mb-2">
+                      GuruPay daily API order quota has been reached on this key. You can complete your deposit immediately using Direct UPI QR:
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const personal = gateways.find((g) => g.code === 'personal_upi') || gateways[0];
+                        if (personal) setSelectedGateway(personal.code);
+                        setError('');
+                        setStep('qr');
+                      }}
+                      className="w-full rounded-lg bg-amber-500 py-2 px-3 text-xs font-black text-slate-950 hover:bg-amber-400 shadow-md transition-all flex items-center justify-center gap-1.5"
+                    >
+                      <Sparkles className="h-4 w-4" />
+                      <span>⚡ Pay via Direct UPI QR & Submit UTR Now</span>
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 
@@ -363,9 +386,32 @@ export default function IndianPaymentModal({
             </div>
 
             {error && (
-              <div className="mb-4 text-xs font-bold text-red-400 bg-red-500/10 border border-red-500/20 p-2.5 rounded-lg text-left flex items-center gap-2">
-                <AlertCircle className="h-4 w-4 shrink-0 text-red-400" />
-                <span>{error}</span>
+              <div className="mb-4 space-y-2.5 rounded-xl bg-red-500/10 border border-red-500/30 p-3.5 text-xs text-red-400">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 shrink-0 text-red-400" />
+                  <span className="font-semibold">{error}</span>
+                </div>
+
+                {error.toLowerCase().includes('limit') && (
+                  <div className="pt-2 border-t border-red-500/20">
+                    <p className="text-[11px] text-slate-300 mb-2">
+                      GuruPay daily API order quota has been reached on this key. You can complete your deposit immediately using Direct UPI QR:
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const personal = gateways.find((g) => g.code === 'personal_upi') || gateways[0];
+                        if (personal) setSelectedGateway(personal.code);
+                        setError('');
+                        setStep('qr');
+                      }}
+                      className="w-full rounded-lg bg-amber-500 py-2 px-3 text-xs font-black text-slate-950 hover:bg-amber-400 shadow-md transition-all flex items-center justify-center gap-1.5"
+                    >
+                      <Sparkles className="h-4 w-4" />
+                      <span>⚡ Pay via Direct UPI QR & Submit UTR Now</span>
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 
