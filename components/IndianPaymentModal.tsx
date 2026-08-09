@@ -104,10 +104,27 @@ export default function IndianPaymentModal({
     if (selectedGateway === 'gurupay') {
       setLoading(true);
       try {
+        let localUser: any = null;
+        if (typeof window !== 'undefined') {
+          try {
+            const raw = localStorage.getItem('smm_user');
+            if (raw) localUser = JSON.parse(raw);
+          } catch (e) {}
+        }
+
+        const effectiveUserId = userId || localUser?.id || '';
+        const userEmail = localUser?.email || '';
+        const username = localUser?.username || '';
+
         const res = await fetch('/api/wallet/gurupay/create-order', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId, amountINR: amt }),
+          body: JSON.stringify({
+            userId: effectiveUserId,
+            userEmail,
+            username,
+            amountINR: amt,
+          }),
         });
         const data = await res.json();
         if (data.success && data.payment_url) {
@@ -173,11 +190,20 @@ export default function IndianPaymentModal({
     setLoading(true);
 
     try {
+      let localUser: any = null;
+      if (typeof window !== 'undefined') {
+        try {
+          const raw = localStorage.getItem('smm_user');
+          if (raw) localUser = JSON.parse(raw);
+        } catch (e) {}
+      }
+      const effectiveUserId = userId || localUser?.id || localUser?.email || '';
+
       const res = await fetch('/api/wallet', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId,
+          userId: effectiveUserId,
           gatewayCode: selectedGateway,
           amountINR: parseFloat(amountINR),
           utr: cleanUtr,

@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { Shield, Check, X, ArrowRight, Lock, UserCheck } from 'lucide-react';
+import { isSupabaseConfigured, getSupabaseClient } from '@/lib/supabase';
 
 interface GoogleAuthModalProps {
   isOpen: boolean;
@@ -20,9 +21,39 @@ export default function GoogleAuthModal({ isOpen, onClose, onSuccess }: GoogleAu
 
   const defaultGmail = 'rajatshakya566@gmail.com';
 
+  const handleSupabaseOAuth = async () => {
+    try {
+      if (isSupabaseConfigured()) {
+        setLoading(true);
+        const supabase = getSupabaseClient();
+        const origin = typeof window !== 'undefined' ? window.location.origin : '';
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: `${origin}/auth/callback`,
+          },
+        });
+        if (error) {
+          setError(`Supabase Google Auth: ${error.message}`);
+          setLoading(false);
+        }
+        return true;
+      }
+    } catch (e: any) {
+      console.warn('Supabase OAuth attempt error, falling back to direct Gmail auth:', e);
+    }
+    return false;
+  };
+
   const handleAuthenticate = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    // If Supabase OAuth is configured, try Supabase OAuth first
+    if (isSupabaseConfigured()) {
+      const launched = await handleSupabaseOAuth();
+      if (launched) return;
+    }
 
     const targetEmail = selectedAccount === 'default' ? defaultGmail : customEmail.trim();
 

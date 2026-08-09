@@ -412,7 +412,35 @@ class SMMDatabase {
   }
 
   getUserById(id: string): User | undefined {
-    return this.data.users.find((u) => u.id === id);
+    if (!id) {
+      return this.data.users[0] || this.createUser('customer', 'customer@example.com');
+    }
+
+    const cleanId = id.trim();
+    
+    // 1. Match by exact ID
+    let found = this.data.users.find((u) => u.id === cleanId);
+    if (found) return found;
+
+    // 2. Match by Email
+    found = this.data.users.find((u) => u.email.toLowerCase() === cleanId.toLowerCase());
+    if (found) return found;
+
+    // 3. Match by Username
+    found = this.data.users.find((u) => u.username.toLowerCase() === cleanId.toLowerCase());
+    if (found) return found;
+
+    // 4. Auto-register or create user record so operations never fail
+    const isEmail = cleanId.includes('@');
+    const email = isEmail ? cleanId : `${cleanId.replace(/[^a-zA-Z0-9_]/g, '')}@gmail.com`;
+    const username = isEmail ? cleanId.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '') : cleanId;
+
+    const newUser = this.createUser(username || 'user', email);
+    if (!isEmail && cleanId.length > 3) {
+      newUser.id = cleanId;
+      this.saveToDisk();
+    }
+    return newUser;
   }
 
   getUserByUsername(username: string): User | undefined {

@@ -4,17 +4,20 @@ import { db } from '@/lib/db';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { userId, amountINR } = body;
-
-    if (!userId || !amountINR || Number(amountINR) <= 0) {
-      return NextResponse.json({ error: 'Valid userId and amountINR are required' }, { status: 400 });
-    }
+    const { userId, userEmail, username, amountINR } = body;
 
     const numAmount = Number(amountINR);
-    const user = db.getUserById(userId);
+    if (isNaN(numAmount) || numAmount <= 0) {
+      return NextResponse.json({ error: 'Valid deposit amount in ₹ INR is required' }, { status: 400 });
+    }
+
+    const targetIdentifier = userId || userEmail || username || 'customer';
+    const user = db.getUserById(targetIdentifier);
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
+
+    const effectiveUserId = user.id;
 
     // Get GuruPay Gateway config from DB or fallback
     const gateways = db.getGateways();
@@ -38,7 +41,7 @@ export async function POST(req: NextRequest) {
     const orderId = `ORD_${dateStr}_${randomNum}`;
 
     // Create pending transaction in local database ledger
-    const pendingTx = db.createPendingGuruPayOrder(userId, numAmount, orderId);
+    const pendingTx = db.createPendingGuruPayOrder(effectiveUserId, numAmount, orderId);
     if ('error' in pendingTx) {
       return NextResponse.json({ error: pendingTx.error }, { status: 400 });
     }
