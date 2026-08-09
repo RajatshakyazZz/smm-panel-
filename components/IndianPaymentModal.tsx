@@ -336,12 +336,27 @@ export default function IndianPaymentModal({
               </div>
             </div>
 
+            {error && (
+              <div className="mb-4 text-xs font-bold text-red-400 bg-red-500/10 border border-red-500/20 p-2.5 rounded-lg text-left flex items-center gap-2">
+                <AlertCircle className="h-4 w-4 shrink-0 text-red-400" />
+                <span>{error}</span>
+              </div>
+            )}
+
             <button
               type="button"
               onClick={handleProceedPayment}
-              className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 py-3 text-sm font-bold text-white shadow-lg shadow-blue-600/30 hover:from-blue-500 hover:to-indigo-500 flex items-center justify-center gap-2"
+              disabled={loading}
+              className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 py-3.5 text-sm font-extrabold text-white shadow-lg shadow-blue-600/30 hover:from-blue-500 hover:to-indigo-500 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
             >
-              <span>Proceed to Pay ₹{amountINR || '0'}</span>
+              {loading ? (
+                <>
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  <span>Connecting to GuruPay Payment Gateway...</span>
+                </>
+              ) : (
+                <span>Proceed to Pay ₹{amountINR || '0'}</span>
+              )}
             </button>
               </>
             )}

@@ -61,23 +61,44 @@ export async function POST(req: NextRequest) {
 
     const gurupayData = await gurupayRes.json().catch(() => null);
 
-    if (gurupayData && gurupayData.status === 'success' && gurupayData.payment_url) {
+    console.log('GuruPay API Create Order Response:', gurupayData);
+
+    const paymentUrl =
+      gurupayData?.payment_url ||
+      gurupayData?.payment_link ||
+      gurupayData?.url ||
+      gurupayData?.pay_url ||
+      gurupayData?.data?.payment_url ||
+      gurupayData?.data?.payment_link ||
+      (gurupayData?.payment_id ? `https://gurupaygateway.com/pay/${gurupayData.payment_id}` : null) ||
+      (gurupayData?.id ? `https://gurupaygateway.com/pay/${gurupayData.id}` : null);
+
+    const isSuccess =
+      gurupayData?.status === 'success' ||
+      gurupayData?.status === 'SUCCESS' ||
+      gurupayData?.status === true ||
+      gurupayData?.success === true ||
+      gurupayData?.message?.toLowerCase().includes('success') ||
+      Boolean(paymentUrl);
+
+    if (isSuccess) {
+      const finalPaymentUrl = paymentUrl || `https://gurupaygateway.com/pay/${orderId}`;
       return NextResponse.json({
         success: true,
         order_id: orderId,
-        payment_url: gurupayData.payment_url,
+        payment_url: finalPaymentUrl,
         amount: numAmount,
+        raw: gurupayData,
       });
     }
 
-    // Fallback: If external API fails, provide direct payment page link format or error
-    console.error('GuruPay API Response:', gurupayData);
+    // If API returned an actual error
     return NextResponse.json(
       {
-        error: gurupayData?.message || 'Failed to generate GuruPay payment link. Please check your API key.',
+        error: gurupayData?.message || gurupayData?.error || 'Failed to generate GuruPay payment link. Please check your API key.',
         raw: gurupayData,
       },
-      { status: 500 }
+      { status: 400 }
     );
   } catch (err: any) {
     console.error('GuruPay Create Order Error:', err);
