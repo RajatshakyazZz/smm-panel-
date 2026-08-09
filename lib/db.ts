@@ -245,99 +245,7 @@ const defaultServices: SMMService[] = [
   },
 ];
 
-const defaultGateways: PaymentGatewayConfig[] = [
-  {
-    id: 'gw_personal_upi',
-    name: 'Personal UPI QR & UPI ID (Direct Bank)',
-    code: 'personal_upi',
-    title: 'Pay via Personal PhonePe / GPay / Paytm QR Code',
-    description: 'No merchant account required! Scan QR Code or copy UPI ID and enter 12-digit UTR to credit balance instantly.',
-    logo: 'https://cdn-icons-png.flaticon.com/512/825/825500.png',
-    enabled: true,
-    isTestMode: false,
-    upiId: '9876543210@paytm',
-    upiName: 'SMM Panel Owner',
-    qrImageUrl: '',
-    minAmountINR: 10,
-    maxAmountINR: 100000,
-    feePercent: 0.0,
-  },
-  {
-    id: 'gw_phonepe',
-    name: 'PhonePe Payment Gateway',
-    code: 'phonepe',
-    title: 'PhonePe UPI / QR / Cards / NetBanking',
-    description: 'Instant UPI Payment via PhonePe App, Paytm, Google Pay, BHIM or QR Scan',
-    logo: 'https://storage.perfectcdn.com/ptchig/24miygkt8gdtzere.png',
-    enabled: true,
-    isTestMode: true,
-    merchantId: 'PHONEPE_M2201993',
-    apiKey: 'phonepe_salt_key_live_xyz123',
-    minAmountINR: 10,
-    maxAmountINR: 100000,
-    feePercent: 0.0,
-  },
-  {
-    id: 'gw_razorpay',
-    name: 'Razorpay',
-    code: 'razorpay',
-    title: 'Razorpay Instant India Gateway',
-    description: 'Supports UPI Auto-Pay, Debit/Credit Cards, Wallets, EMI',
-    logo: 'https://storage.perfectcdn.com/heheql/ajhxrckajxhpyilo.png',
-    enabled: true,
-    isTestMode: true,
-    merchantId: 'rzp_live_99887766',
-    apiKey: 'rzp_test_key_sample123',
-    minAmountINR: 50,
-    maxAmountINR: 200000,
-    feePercent: 0.0,
-  },
-  {
-    id: 'gw_paytm',
-    name: 'Paytm UPI QR Auto Pay',
-    code: 'paytm',
-    title: 'Paytm Instant UPI & QR',
-    description: 'Scan Paytm QR Code or pay with Paytm Wallet/UPI',
-    logo: 'https://storage.perfectcdn.com/heheql/ljih29o85kkasc9a.png',
-    enabled: true,
-    isTestMode: true,
-    merchantId: 'PAYTM_MID_INDIA_990',
-    apiKey: 'paytm_key_live_4432',
-    minAmountINR: 10,
-    maxAmountINR: 50000,
-    feePercent: 0.0,
-  },
-  {
-    id: 'gw_cashfree',
-    name: 'Cashfree Payments',
-    code: 'cashfree',
-    title: 'Cashfree Payment Gateway',
-    description: 'Instant Indian Banking, Cards, and UPI',
-    logo: 'https://storage.perfectcdn.com/heheql/cf0tgtb1yhbhhnuu.png',
-    enabled: true,
-    isTestMode: true,
-    merchantId: 'CF_MERCHANT_908',
-    apiKey: 'cf_app_id_88912',
-    minAmountINR: 100,
-    maxAmountINR: 150000,
-    feePercent: 0.0,
-  },
-  {
-    id: 'gw_easebuzz',
-    name: 'Easebuzz Gateway',
-    code: 'easebuzz',
-    title: 'Easebuzz Seamless UPI',
-    description: 'Fast Indian payment processing',
-    logo: 'https://storage.perfectcdn.com/heheql/ajhxrckajxhpyilo.png',
-    enabled: true,
-    isTestMode: true,
-    merchantId: 'EASE_MID_001',
-    apiKey: 'ease_key_9988',
-    minAmountINR: 50,
-    maxAmountINR: 100000,
-    feePercent: 0.0,
-  },
-];
+const defaultGateways: PaymentGatewayConfig[] = [];
 
 const defaultOrders: SMMOrder[] = [];
 
@@ -368,12 +276,7 @@ class SMMDatabase {
         const raw = fs.readFileSync(DB_FILE, 'utf-8');
         const parsed = JSON.parse(raw);
         if (parsed && typeof parsed === 'object') {
-          const loadedGateways: PaymentGatewayConfig[] = parsed.gateways || defaultGateways;
-          for (const defaultGw of defaultGateways) {
-            if (!loadedGateways.some((g) => g.code === defaultGw.code)) {
-              loadedGateways.unshift(defaultGw);
-            }
-          }
+          const loadedGateways: PaymentGatewayConfig[] = Array.isArray(parsed.gateways) ? parsed.gateways : defaultGateways;
 
           this.data = {
             users: parsed.users || defaultUsers,
@@ -869,6 +772,32 @@ class SMMDatabase {
   // --- GATEWAYS & WALLET ---
   getGateways(): PaymentGatewayConfig[] {
     return this.data.gateways;
+  }
+
+  addGateway(newGw: PaymentGatewayConfig): PaymentGatewayConfig {
+    const existingIndex = this.data.gateways.findIndex((g) => g.code === newGw.code);
+    if (existingIndex >= 0) {
+      this.data.gateways[existingIndex] = newGw;
+    } else {
+      this.data.gateways.push(newGw);
+    }
+    this.saveToDisk();
+    return newGw;
+  }
+
+  deleteGateway(code: string): boolean {
+    const initialLength = this.data.gateways.length;
+    this.data.gateways = this.data.gateways.filter((g) => g.code !== code);
+    if (this.data.gateways.length !== initialLength) {
+      this.saveToDisk();
+      return true;
+    }
+    return false;
+  }
+
+  clearAllGateways(): void {
+    this.data.gateways = [];
+    this.saveToDisk();
   }
 
   updateGateway(code: string, updates: Partial<PaymentGatewayConfig>): PaymentGatewayConfig | null {

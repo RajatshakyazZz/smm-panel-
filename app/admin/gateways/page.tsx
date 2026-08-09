@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import DashboardNavbar from '@/components/DashboardNavbar';
 import DashboardSidebar from '@/components/DashboardSidebar';
-import { CreditCard, Save, CheckCircle2, ShieldCheck, QrCode, Sparkles } from 'lucide-react';
+import { CreditCard, Save, CheckCircle2, ShieldCheck, QrCode, Sparkles, Trash2, Plus, AlertCircle, X } from 'lucide-react';
 import { PaymentGatewayConfig, User } from '@/lib/types';
 
 export default function AdminGatewaysPage() {
@@ -12,6 +12,21 @@ export default function AdminGatewaysPage() {
   const [pendingTxs, setPendingTxs] = useState<any[]>([]);
   const [msg, setMsg] = useState('');
   const [saving, setSaving] = useState(false);
+
+  // Add Gateway Modal State
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newGwName, setNewGwName] = useState('');
+  const [newGwCode, setNewGwCode] = useState('');
+  const [newGwTitle, setNewGwTitle] = useState('');
+  const [newGwDesc, setNewGwDesc] = useState('');
+  const [newGwUpiId, setNewGwUpiId] = useState('');
+  const [newGwUpiName, setNewGwUpiName] = useState('');
+  const [newGwQrUrl, setNewGwQrUrl] = useState('');
+  const [newGwMerchantId, setNewGwMerchantId] = useState('');
+  const [newGwApiKey, setNewGwApiKey] = useState('');
+  const [newGwMinAmount, setNewGwMinAmount] = useState('10');
+  const [newGwMaxAmount, setNewGwMaxAmount] = useState('100000');
+  const [addingGw, setAddingGw] = useState(false);
 
   const fetchGateways = () => {
     fetch('/api/wallet')
@@ -79,6 +94,103 @@ export default function AdminGatewaysPage() {
     }
   };
 
+  const handleDeleteGateway = async (code: string, name: string) => {
+    if (!confirm(`Are you sure you want to REMOVE payment gateway "${name}"?`)) return;
+
+    try {
+      const res = await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'delete_gateway', gatewayCode: code }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMsg(`Gateway "${name}" deleted successfully.`);
+        fetchGateways();
+      } else {
+        alert(data.error || 'Failed to delete gateway');
+      }
+    } catch (e) {
+      alert('Network error while deleting gateway');
+    }
+  };
+
+  const handleClearAllGateways = async () => {
+    if (!confirm('⚠️ Are you sure you want to DELETE ALL PAYMENT GATEWAYS? Users will not see any payment options until you add a new gateway.')) return;
+
+    try {
+      const res = await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'clear_all_gateways' }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMsg('✓ All payment gateways removed successfully!');
+        fetchGateways();
+      } else {
+        alert(data.error || 'Failed to remove gateways');
+      }
+    } catch (e) {
+      alert('Network error while clearing gateways');
+    }
+  };
+
+  const handleAddGateway = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newGwName || !newGwCode) {
+      alert('Gateway Name and Code are required.');
+      return;
+    }
+
+    setAddingGw(true);
+    try {
+      const res = await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'add_gateway',
+          gateway: {
+            name: newGwName,
+            code: newGwCode.trim().toLowerCase().replace(/\s+/g, '_'),
+            title: newGwTitle || newGwName,
+            description: newGwDesc,
+            upiId: newGwUpiId,
+            upiName: newGwUpiName,
+            qrImageUrl: newGwQrUrl,
+            merchantId: newGwMerchantId,
+            apiKey: newGwApiKey,
+            minAmountINR: Number(newGwMinAmount) || 10,
+            maxAmountINR: Number(newGwMaxAmount) || 100000,
+            enabled: true,
+          },
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setMsg(`✓ Gateway "${newGwName}" added successfully!`);
+        setShowAddModal(false);
+        setNewGwName('');
+        setNewGwCode('');
+        setNewGwTitle('');
+        setNewGwDesc('');
+        setNewGwUpiId('');
+        setNewGwUpiName('');
+        setNewGwQrUrl('');
+        setNewGwMerchantId('');
+        setNewGwApiKey('');
+        fetchGateways();
+      } else {
+        alert(data.error || 'Failed to add gateway');
+      }
+    } catch (err) {
+      alert('Network error adding gateway');
+    } finally {
+      setAddingGw(false);
+    }
+  };
+
   const handleFieldChange = (code: string, field: string, value: any) => {
     setGateways(
       gateways.map((g) => (g.code === code ? { ...g, [field]: value } : g))
@@ -117,7 +229,7 @@ export default function AdminGatewaysPage() {
         });
       }
 
-      setMsg('Payment Gateways & Personal UPI QR settings updated successfully!');
+      setMsg('Payment Gateways updated successfully!');
       fetchGateways();
     } catch (err) {
       setMsg('Error saving gateway configurations.');
@@ -127,9 +239,6 @@ export default function AdminGatewaysPage() {
     }
   };
 
-  const personalUpiGw = gateways.find((g) => g.code === 'personal_upi');
-  const merchantGws = gateways.filter((g) => g.code !== 'personal_upi');
-
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
       <DashboardNavbar user={adminUser} onLogout={() => (window.location.href = '/login')} />
@@ -138,336 +247,316 @@ export default function AdminGatewaysPage() {
         <DashboardSidebar role="super_admin" isAdminNav={true} />
 
         <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto w-full">
-          <div className="mb-6 flex items-center justify-between">
+          {/* Header Controls */}
+          <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-black text-white">Payment Gateways & Personal UPI</h1>
-              <p className="mt-1 text-xs text-slate-400">Configure Personal PhonePe/GPay QR code or Merchant Gateways for wallet recharges</p>
+              <h1 className="text-2xl font-black text-white">Payment Gateways Management</h1>
+              <p className="mt-1 text-xs text-slate-400">Configure or add payment gateways and UPI payment methods for user wallet recharges</p>
             </div>
 
-            <button
-              onClick={handleSaveGateways}
-              disabled={saving}
-              className="inline-flex items-center gap-2 rounded-xl bg-purple-600 px-5 py-2.5 text-xs font-bold text-white shadow-lg shadow-purple-600/30 hover:bg-purple-500 disabled:opacity-50"
-            >
-              <Save className="h-4 w-4" />
-              <span>{saving ? 'Saving...' : 'Save Settings'}</span>
-            </button>
+            <div className="flex items-center gap-2">
+              {gateways.length > 0 && (
+                <button
+                  onClick={handleClearAllGateways}
+                  type="button"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-2.5 text-xs font-bold text-red-400 hover:bg-red-500/20 transition-all"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  <span>Remove All Gateways</span>
+                </button>
+              )}
+
+              <button
+                onClick={() => setShowAddModal(true)}
+                type="button"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-emerald-600/20 hover:bg-emerald-500 transition-all"
+              >
+                <Plus className="h-4 w-4" />
+                <span>+ Add New Gateway</span>
+              </button>
+
+              {gateways.length > 0 && (
+                <button
+                  onClick={handleSaveGateways}
+                  disabled={saving}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-purple-600 px-5 py-2.5 text-xs font-bold text-white shadow-lg shadow-purple-600/30 hover:bg-purple-500 disabled:opacity-50 transition-all"
+                >
+                  <Save className="h-4 w-4" />
+                  <span>{saving ? 'Saving...' : 'Save All Settings'}</span>
+                </button>
+              )}
+            </div>
           </div>
 
           {msg && (
-            <div className="mb-6 rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-3 text-xs text-emerald-400 font-semibold flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4" />
+            <div className="mb-6 rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-3.5 text-xs text-emerald-400 font-bold flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 shrink-0" />
               <span>{msg}</span>
             </div>
           )}
 
-          {/* PENDING DEPOSITS VERIFICATION DESK */}
-          {pendingTxs.length > 0 && (
-            <div className="mb-8 rounded-2xl border-2 border-amber-500/50 bg-amber-950/30 p-6 shadow-2xl relative overflow-hidden">
-              <div className="flex items-center justify-between border-b border-amber-500/30 pb-4 mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/20 text-amber-400 font-bold">
-                    ⏳
-                  </div>
-                  <div>
-                    <h2 className="text-base font-black text-white flex items-center gap-2">
-                      <span>Pending UPI Deposit Requests</span>
-                      <span className="rounded-full bg-amber-500 px-2.5 py-0.5 text-xs font-extrabold text-slate-950">
-                        {pendingTxs.length} Waiting Verification
-                      </span>
-                    </h2>
-                    <p className="text-xs text-slate-300">
-                      Users submitted UTRs for payment. Verify in your PhonePe / GPay / Paytm bank statement before approving.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                {pendingTxs.map((tx) => (
-                  <div
-                    key={tx.id}
-                    className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 rounded-xl border border-slate-800 bg-slate-900/90 p-4"
-                  >
+          {/* ADD NEW GATEWAY MODAL */}
+          {showAddModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+              <div className="w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-2xl">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-400 font-bold">
+                      <Plus className="h-5 w-5" />
+                    </div>
                     <div>
-                      <div className="flex items-center gap-2 text-xs font-bold text-white">
-                        <span>User: <strong className="text-purple-400">{tx.username}</strong></span>
-                        <span className="text-slate-600">•</span>
-                        <span className="text-amber-300">Amount: ₹{tx.amountINR}</span>
-                      </div>
-                      <div className="mt-1 flex items-center gap-3 text-xs text-slate-400 font-mono">
-                        <span>UTR / Ref: <strong className="text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">{tx.transactionRef}</strong></span>
-                        <span>Gateway: {tx.gatewayName}</span>
-                        <span>Time: {new Date(tx.createdAt).toLocaleTimeString()}</span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 w-full md:w-auto">
-                      <button
-                        type="button"
-                        onClick={() => handleRejectTx(tx.id)}
-                        className="flex-1 md:flex-initial rounded-xl bg-red-600/20 border border-red-500/30 px-3.5 py-2 text-xs font-bold text-red-300 hover:bg-red-600/30"
-                      >
-                        Reject Fake UTR
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleApproveTx(tx.id)}
-                        className="flex-1 md:flex-initial rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-lg shadow-emerald-600/30 hover:bg-emerald-500"
-                      >
-                        ✓ Approve & Credit ₹{tx.netINR}
-                      </button>
+                      <h3 className="text-base font-bold text-white">Add New Custom Payment Gateway</h3>
+                      <p className="text-xs text-slate-400">Configure your new preferred payment gateway or UPI method</p>
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
-          <div className="mb-8 rounded-2xl border border-amber-500/30 bg-amber-950/20 p-6 shadow-xl">
-            <div className="flex items-start gap-4">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/20 text-amber-400 font-black text-lg">
-                💡
-              </div>
-              <div className="space-y-2">
-                <h2 className="text-base font-bold text-white">Bina Merchant Gateway ke Panel Chalaye (Method 1: Personal UPI)</h2>
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  Agar aapke paas koi official Merchant Payment Gateway nahi hai, toh neeche apna <strong className="text-amber-300">Personal PhonePe/Paytm/GPay UPI ID</strong> daal kar save kar dein. Users QR scan karke direct aapke bank account me pay karenge!
-                </p>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2">
-                  <div className="rounded-xl border border-slate-800 bg-slate-900/90 p-3.5">
-                    <span className="text-xs font-bold text-amber-400 block mb-1">1. Setup Personal UPI ID</span>
-                    <p className="text-[11px] text-slate-400">Neeche box me apna Google Pay / PhonePe / Paytm UPI ID daalein.</p>
-                  </div>
-
-                  <div className="rounded-xl border border-slate-800 bg-slate-900/90 p-3.5">
-                    <span className="text-xs font-bold text-emerald-400 block mb-1">2. Auto QR Generation</span>
-                    <p className="text-[11px] text-slate-400">System aapke UPI ID ka live QR code customer ke Add Funds modal me dikhaega.</p>
-                  </div>
-
-                  <div className="rounded-xl border border-slate-800 bg-slate-900/90 p-3.5">
-                    <span className="text-xs font-bold text-purple-400 block mb-1">3. UTR Reference Verification</span>
-                    <p className="text-[11px] text-slate-400">User payment ke baad 12-digit UTR enter karega aur wallet balance तुरंत credit ho jaega.</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* METHOD 1: DEDICATED PERSONAL UPI CONFIGURATION CARD */}
-          {personalUpiGw && (
-            <div className="mb-8 rounded-2xl border-2 border-amber-500/40 bg-gradient-to-b from-amber-950/30 to-slate-900/90 p-6 shadow-2xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 bg-amber-500 text-slate-950 text-[10px] font-black px-3 py-1 rounded-bl-xl uppercase tracking-wider">
-                Recommended (No Gateway Needed)
-              </div>
-
-              <div className="flex items-center justify-between border-b border-amber-500/20 pb-4 mb-5">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30">
-                    <QrCode className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <h2 className="text-base font-extrabold text-white flex items-center gap-2">
-                      <span>Method 1: Personal UPI QR Code & UPI ID (Direct Bank)</span>
-                      <Sparkles className="h-4 w-4 text-amber-400 fill-amber-400" />
-                    </h2>
-                    <p className="text-xs text-slate-300">Set your personal UPI ID (PhonePe, Paytm, Google Pay, BHIM) to receive 100% direct bank deposits</p>
-                  </div>
+                  <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-white p-1">
+                    <X className="h-5 w-5" />
+                  </button>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => handleToggleGateway('personal_upi')}
-                  className={`rounded-xl px-4 py-2 text-xs font-bold border transition-all ${
-                    personalUpiGw.enabled
-                      ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300 shadow-lg shadow-emerald-500/10'
-                      : 'bg-slate-800 border-slate-700 text-slate-500'
-                  }`}
-                >
-                  {personalUpiGw.enabled ? '● Active Method' : 'Disabled'}
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
-                <div>
-                  <label className="block text-xs font-bold text-amber-300 mb-1.5">Your Personal UPI ID (VPA)</label>
-                  <input
-                    type="text"
-                    value={personalUpiGw.upiId || ''}
-                    onChange={(e) => handleFieldChange('personal_upi', 'upiId', e.target.value)}
-                    placeholder="e.g. 9876543210@paytm or yourname@ybl"
-                    className="w-full rounded-xl border border-amber-500/30 bg-slate-950 p-3 text-sm font-mono font-bold text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50"
-                  />
-                  <p className="mt-1 text-[11px] text-slate-400">Example: phonepe 9876543210@ybl, GPay user@okaxis, Paytm 9876543210@paytm</p>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-300 mb-1.5">Receiver / Business Name</label>
-                  <input
-                    type="text"
-                    value={personalUpiGw.upiName || ''}
-                    onChange={(e) => handleFieldChange('personal_upi', 'upiName', e.target.value)}
-                    placeholder="e.g. Royal SMM Panel Owner"
-                    className="w-full rounded-xl border border-slate-700 bg-slate-950 p-3 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50"
-                  />
-                  <p className="mt-1 text-[11px] text-slate-400">Name shown on UPI Apps when customers scan QR code</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-5 border-t border-slate-800/80 pt-5">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">Verification & Anti-Fraud Mode</label>
-                  <select
-                    value={personalUpiGw.requireApproval ? 'manual' : 'auto'}
-                    onChange={(e) => handleFieldChange('personal_upi', 'requireApproval', e.target.value === 'manual')}
-                    className="w-full rounded-xl border border-amber-500/40 bg-slate-950 p-2.5 text-xs font-bold text-amber-300 focus:outline-none"
-                  >
-                    <option value="manual">🔒 Manual Admin Verification (Secure)</option>
-                    <option value="auto">⚡ Instant Auto Credit (Demo Mode)</option>
-                  </select>
-                  <p className="mt-1 text-[10px] text-slate-400">
-                    {personalUpiGw.requireApproval
-                      ? 'Secure: Admin checks bank/PhonePe statement before approving deposit.'
-                      : 'Instant: Credits balance immediately upon UTR submission.'}
-                  </p>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">Custom QR Image URL (Optional)</label>
-                  <input
-                    type="text"
-                    value={personalUpiGw.qrImageUrl || ''}
-                    onChange={(e) => handleFieldChange('personal_upi', 'qrImageUrl', e.target.value)}
-                    placeholder="Leave empty for auto QR code"
-                    className="w-full rounded-xl border border-slate-700 bg-slate-950 p-2.5 text-xs text-white"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">Min Deposit (₹)</label>
-                  <input
-                    type="number"
-                    value={personalUpiGw.minAmountINR}
-                    onChange={(e) => handleFieldChange('personal_upi', 'minAmountINR', e.target.value)}
-                    className="w-full rounded-xl border border-slate-700 bg-slate-950 p-2.5 text-xs font-bold text-white"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">Max Deposit (₹)</label>
-                  <input
-                    type="number"
-                    value={personalUpiGw.maxAmountINR}
-                    onChange={(e) => handleFieldChange('personal_upi', 'maxAmountINR', e.target.value)}
-                    className="w-full rounded-xl border border-slate-700 bg-slate-950 p-2.5 text-xs font-bold text-white"
-                  />
-                </div>
-              </div>
-
-              {/* QR Preview & Direct Save Button */}
-              {personalUpiGw.upiId && (
-                <div className="mt-5 rounded-xl bg-slate-950/80 p-4 border border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                  <div className="flex items-center gap-4">
-                    <div className="h-20 w-20 bg-white p-1 rounded-lg shrink-0 border">
-                      <img
-                        src={
-                          personalUpiGw.qrImageUrl ||
-                          `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(
-                            `upi://pay?pa=${personalUpiGw.upiId}&pn=${encodeURIComponent(
-                              personalUpiGw.upiName || 'SMM Panel'
-                            )}&cu=INR`
-                          )}&size=150x150`
-                        }
-                        alt="Live Dynamic QR Preview"
-                        className="h-full w-full object-contain"
+                <form onSubmit={handleAddGateway} className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-300 mb-1">Gateway Name *</label>
+                      <input
+                        type="text"
+                        required
+                        value={newGwName}
+                        onChange={(e) => setNewGwName(e.target.value)}
+                        placeholder="e.g. PhonePe UPI Auto Gateway"
+                        className="w-full rounded-xl border border-slate-700 bg-slate-950 p-2.5 text-xs text-white"
                       />
                     </div>
-                    <div className="text-xs">
-                      <span className="text-emerald-400 font-bold block mb-0.5">✓ Live Dynamic QR Code Active</span>
-                      <p className="text-slate-300">
-                        Users scanning this QR code in user dashboard will send funds directly to: <strong className="text-amber-300 font-mono">{personalUpiGw.upiId}</strong> ({personalUpiGw.upiName || 'SMM Panel'})
-                      </p>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-300 mb-1">Unique Code ID *</label>
+                      <input
+                        type="text"
+                        required
+                        value={newGwCode}
+                        onChange={(e) => setNewGwCode(e.target.value)}
+                        placeholder="e.g. phonepe_new, custom_upi"
+                        className="w-full rounded-xl border border-slate-700 bg-slate-950 p-2.5 text-xs text-white font-mono"
+                      />
                     </div>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={handleSaveGateways}
-                    disabled={saving}
-                    className="w-full sm:w-auto shrink-0 rounded-xl bg-amber-500 px-5 py-2.5 text-xs font-black text-slate-950 shadow-lg shadow-amber-500/20 hover:bg-amber-400 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
-                  >
-                    <Save className="h-4 w-4" />
-                    <span>{saving ? 'Saving UPI...' : 'Save UPI Changes'}</span>
-                  </button>
-                </div>
-              )}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">Title Displayed to Customers</label>
+                    <input
+                      type="text"
+                      value={newGwTitle}
+                      onChange={(e) => setNewGwTitle(e.target.value)}
+                      placeholder="e.g. Instant UPI / NetBanking / Cards"
+                      className="w-full rounded-xl border border-slate-700 bg-slate-950 p-2.5 text-xs text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">Short Description</label>
+                    <input
+                      type="text"
+                      value={newGwDesc}
+                      onChange={(e) => setNewGwDesc(e.target.value)}
+                      placeholder="e.g. Scan QR Code or Pay via PhonePe / Paytm / GPay"
+                      className="w-full rounded-xl border border-slate-700 bg-slate-950 p-2.5 text-xs text-white"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-amber-300 mb-1">UPI ID (If UPI / QR Gateway)</label>
+                      <input
+                        type="text"
+                        value={newGwUpiId}
+                        onChange={(e) => setNewGwUpiId(e.target.value)}
+                        placeholder="e.g. 9876543210@paytm"
+                        className="w-full rounded-xl border border-slate-700 bg-slate-950 p-2.5 text-xs text-amber-300 font-mono"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-300 mb-1">Account Holder / UPI Name</label>
+                      <input
+                        type="text"
+                        value={newGwUpiName}
+                        onChange={(e) => setNewGwUpiName(e.target.value)}
+                        placeholder="e.g. SMM Panel"
+                        className="w-full rounded-xl border border-slate-700 bg-slate-950 p-2.5 text-xs text-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-300 mb-1">Merchant ID / App ID (If API)</label>
+                      <input
+                        type="text"
+                        value={newGwMerchantId}
+                        onChange={(e) => setNewGwMerchantId(e.target.value)}
+                        placeholder="Merchant ID"
+                        className="w-full rounded-xl border border-slate-700 bg-slate-950 p-2.5 text-xs text-white font-mono"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-300 mb-1">API Key / Secret (If API)</label>
+                      <input
+                        type="password"
+                        value={newGwApiKey}
+                        onChange={(e) => setNewGwApiKey(e.target.value)}
+                        placeholder="Secret Key"
+                        className="w-full rounded-xl border border-slate-700 bg-slate-950 p-2.5 text-xs text-white font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-300 mb-1">Min Deposit (₹)</label>
+                      <input
+                        type="number"
+                        value={newGwMinAmount}
+                        onChange={(e) => setNewGwMinAmount(e.target.value)}
+                        className="w-full rounded-xl border border-slate-700 bg-slate-950 p-2.5 text-xs text-white font-bold"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-300 mb-1">Max Deposit (₹)</label>
+                      <input
+                        type="number"
+                        value={newGwMaxAmount}
+                        onChange={(e) => setNewGwMaxAmount(e.target.value)}
+                        className="w-full rounded-xl border border-slate-700 bg-slate-950 p-2.5 text-xs text-white font-bold"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="pt-3 flex justify-end gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setShowAddModal(false)}
+                      className="rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-xs font-semibold text-slate-300 hover:bg-slate-700"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={addingGw}
+                      className="rounded-xl bg-emerald-600 px-5 py-2.5 text-xs font-bold text-white hover:bg-emerald-500 shadow-lg shadow-emerald-600/30 disabled:opacity-50"
+                    >
+                      {addingGw ? 'Saving Gateway...' : 'Save New Gateway'}
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
           )}
 
-          {/* OTHER MERCHANT GATEWAYS */}
-          <h2 className="text-base font-bold text-white mb-4">Official Merchant Payment Gateways</h2>
-          <div className="space-y-6">
-            {merchantGws.map((gw) => (
-              <div key={gw.id} className="rounded-2xl border border-slate-800 bg-slate-900/80 p-6 shadow-xl space-y-4">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                  <div className="flex items-center gap-3">
-                    <CreditCard className="h-5 w-5 text-purple-400" />
-                    <div>
-                      <h3 className="font-bold text-white text-sm">{gw.name}</h3>
-                      <p className="text-xs text-slate-400">{gw.description}</p>
+          {/* EMPTY STATE WHEN ALL GATEWAYS ARE REMOVED */}
+          {gateways.length === 0 ? (
+            <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-10 text-center space-y-4 my-6 shadow-2xl">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                <CheckCircle2 className="h-8 w-8" />
+              </div>
+              <h2 className="text-lg font-black text-white">All Payment Gateways Successfully Removed</h2>
+              <p className="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
+                All old payment gateways have been completely removed from both user and admin sections. When you are ready to add your new payment gateway, click the button below!
+              </p>
+              <button
+                onClick={() => setShowAddModal(true)}
+                type="button"
+                className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-6 py-3 text-xs font-extrabold text-white shadow-xl shadow-emerald-600/30 hover:bg-emerald-500 transition-all"
+              >
+                <Plus className="h-4 w-4" />
+                <span>+ Add Your New Gateway Now</span>
+              </button>
+            </div>
+          ) : (
+            /* GATEWAYS LISTING */
+            <div className="space-y-6">
+              {gateways.map((gw) => (
+                <div key={gw.id} className="rounded-2xl border border-slate-800 bg-slate-900/80 p-6 shadow-xl space-y-4">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20 font-bold">
+                        💳
+                      </div>
+                      <div>
+                        <h3 className="font-extrabold text-white text-sm">{gw.name}</h3>
+                        <p className="text-xs text-slate-400">{gw.description}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleToggleGateway(gw.code)}
+                        className={`rounded-xl px-3.5 py-1.5 text-xs font-bold border transition-all ${
+                          gw.enabled
+                            ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                            : 'bg-slate-800 border-slate-700 text-slate-500'
+                        }`}
+                      >
+                        {gw.enabled ? 'Enabled' : 'Disabled'}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteGateway(gw.code, gw.name)}
+                        className="rounded-xl border border-red-500/30 bg-red-500/10 p-2 text-red-400 hover:bg-red-500/20 transition-all"
+                        title="Delete Gateway"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
                     </div>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => handleToggleGateway(gw.code)}
-                    className={`rounded-xl px-4 py-1.5 text-xs font-bold border ${
-                      gw.enabled
-                        ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-                        : 'bg-slate-800 border-slate-700 text-slate-500'
-                    }`}
-                  >
-                    {gw.enabled ? 'Enabled' : 'Disabled'}
-                  </button>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-400 mb-1">Gateway Name</label>
+                      <input
+                        type="text"
+                        value={gw.name}
+                        onChange={(e) => handleFieldChange(gw.code, 'name', e.target.value)}
+                        className="w-full rounded-xl border border-slate-700 bg-slate-950 p-2.5 text-xs font-bold text-white"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold text-amber-300 mb-1">UPI ID (If UPI)</label>
+                      <input
+                        type="text"
+                        value={gw.upiId || ''}
+                        onChange={(e) => handleFieldChange(gw.code, 'upiId', e.target.value)}
+                        placeholder="e.g. 9876543210@paytm"
+                        className="w-full rounded-xl border border-slate-700 bg-slate-950 p-2.5 text-xs font-mono text-amber-300"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-400 mb-1">Merchant ID / Key ID</label>
+                      <input
+                        type="text"
+                        value={gw.merchantId || ''}
+                        onChange={(e) => handleFieldChange(gw.code, 'merchantId', e.target.value)}
+                        className="w-full rounded-xl border border-slate-700 bg-slate-950 p-2.5 text-xs font-mono text-white"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-400 mb-1">Min Deposit (₹)</label>
+                      <input
+                        type="number"
+                        value={gw.minAmountINR}
+                        onChange={(e) => handleFieldChange(gw.code, 'minAmountINR', e.target.value)}
+                        className="w-full rounded-xl border border-slate-700 bg-slate-950 p-2.5 text-xs font-bold text-white"
+                      />
+                    </div>
+                  </div>
                 </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-400 mb-1">Merchant ID / Key ID</label>
-                    <input
-                      type="text"
-                      value={gw.merchantId || ''}
-                      onChange={(e) => handleFieldChange(gw.code, 'merchantId', e.target.value)}
-                      className="w-full rounded-xl border border-slate-700 bg-slate-950 p-2.5 text-xs font-mono text-white"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-400 mb-1">Secret Key / Salt</label>
-                    <input
-                      type="password"
-                      value={gw.apiKey || ''}
-                      onChange={(e) => handleFieldChange(gw.code, 'apiKey', e.target.value)}
-                      className="w-full rounded-xl border border-slate-700 bg-slate-950 p-2.5 text-xs font-mono text-white"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-400 mb-1">Min Deposit (₹)</label>
-                    <input
-                      type="number"
-                      value={gw.minAmountINR}
-                      onChange={(e) => handleFieldChange(gw.code, 'minAmountINR', e.target.value)}
-                      className="w-full rounded-xl border border-slate-700 bg-slate-950 p-2.5 text-xs font-bold text-white"
-                    />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </main>
       </div>
     </div>
   );
 }
-

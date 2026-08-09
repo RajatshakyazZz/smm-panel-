@@ -102,24 +102,31 @@ export default function WalletPage() {
 
           {/* Supported Gateways Grid */}
           <div className="mb-8">
-            <h2 className="text-sm font-bold text-white uppercase tracking-wider mb-4">Supported Indian Gateways</h2>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {gateways.map((gw) => (
-                <div key={gw.id} className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-white text-sm">{gw.name}</span>
-                    <span className="rounded bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-400 border border-emerald-500/20">
-                      Active
-                    </span>
+            <h2 className="text-sm font-bold text-white uppercase tracking-wider mb-4">Supported Payment Gateways</h2>
+            {gateways.length === 0 ? (
+              <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 text-center space-y-2">
+                <p className="text-sm font-bold text-amber-400">No Payment Gateways Currently Active</p>
+                <p className="text-xs text-slate-400">The administrator is setting up the new payment gateway. Please check back soon!</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {gateways.map((gw) => (
+                  <div key={gw.id} className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-white text-sm">{gw.name}</span>
+                      <span className="rounded bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-400 border border-emerald-500/20">
+                        Active
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400">{gw.description}</p>
+                    <div className="pt-2 flex justify-between text-[11px] text-slate-500 border-t border-slate-800/80">
+                      <span>Min: ₹{gw.minAmountINR}</span>
+                      <span>Fee: {gw.feePercent}%</span>
+                    </div>
                   </div>
-                  <p className="text-xs text-slate-400">{gw.description}</p>
-                  <div className="pt-2 flex justify-between text-[11px] text-slate-500 border-t border-slate-800/80">
-                    <span>Min: ₹{gw.minAmountINR}</span>
-                    <span>Fee: {gw.feePercent}%</span>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Deposit History */}

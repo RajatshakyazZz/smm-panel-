@@ -161,7 +161,7 @@ export default function IndianPaymentModal({
               </div>
               <div>
                 <h3 className="text-lg font-bold text-white">Add Funds in Wallet (₹ INR)</h3>
-                <p className="text-xs text-slate-400">Direct Personal UPI QR Code & Bank Deposit</p>
+                <p className="text-xs text-slate-400">Recharge your SMM Panel account balance</p>
               </div>
             </div>
 
@@ -172,8 +172,26 @@ export default function IndianPaymentModal({
               </div>
             )}
 
-            {/* Gateway Grid */}
-            <div className="mb-5 space-y-2.5">
+            {gateways.length === 0 ? (
+              <div className="my-6 rounded-2xl border border-slate-800 bg-slate-950 p-6 text-center space-y-3">
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                  <AlertCircle className="h-6 w-6" />
+                </div>
+                <h4 className="text-sm font-bold text-white">No Active Payment Gateway</h4>
+                <p className="text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">
+                  All previous payment gateways have been removed. The admin will configure the new gateway shortly.
+                </p>
+                <button
+                  onClick={handleCloseAndReset}
+                  className="mt-2 rounded-xl bg-slate-800 px-4 py-2 text-xs font-bold text-slate-200 hover:bg-slate-700 transition-colors"
+                >
+                  Close Window
+                </button>
+              </div>
+            ) : (
+              <>
+                {/* Gateway Grid */}
+                <div className="mb-5 space-y-2.5">
               <label className="block text-xs font-semibold text-slate-300">Select Payment Method</label>
               <div className="grid grid-cols-1 gap-2.5">
                 {gateways.map((gw) => {
@@ -257,6 +275,8 @@ export default function IndianPaymentModal({
             >
               <span>Proceed to Pay ₹{amountINR || '0'}</span>
             </button>
+              </>
+            )}
           </div>
         )}
 

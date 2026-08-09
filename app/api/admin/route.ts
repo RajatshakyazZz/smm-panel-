@@ -155,6 +155,45 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, gateway: gw });
     }
 
+    if (action === 'add_gateway') {
+      const { gateway } = body;
+      if (!gateway || !gateway.name || !gateway.code) {
+        return NextResponse.json({ error: 'Gateway configuration object with name and code is required' }, { status: 400 });
+      }
+      const newGw = db.addGateway({
+        id: gateway.id || `gw_${gateway.code}`,
+        name: gateway.name,
+        code: gateway.code,
+        title: gateway.title || gateway.name,
+        description: gateway.description || '',
+        logo: gateway.logo || '',
+        enabled: gateway.enabled !== false,
+        isTestMode: Boolean(gateway.isTestMode),
+        merchantId: gateway.merchantId || '',
+        apiKey: gateway.apiKey || '',
+        upiId: gateway.upiId || '',
+        upiName: gateway.upiName || '',
+        qrImageUrl: gateway.qrImageUrl || '',
+        minAmountINR: Number(gateway.minAmountINR) || 10,
+        maxAmountINR: Number(gateway.maxAmountINR) || 100000,
+        feePercent: Number(gateway.feePercent) || 0,
+      });
+      return NextResponse.json({ success: true, gateway: newGw, message: 'New gateway added successfully!' });
+    }
+
+    if (action === 'delete_gateway') {
+      if (!gatewayCode) {
+        return NextResponse.json({ error: 'gatewayCode required' }, { status: 400 });
+      }
+      const deleted = db.deleteGateway(gatewayCode);
+      return NextResponse.json({ success: true, deleted, message: 'Gateway removed' });
+    }
+
+    if (action === 'clear_all_gateways') {
+      db.clearAllGateways();
+      return NextResponse.json({ success: true, message: 'All payment gateways removed successfully' });
+    }
+
     if (action === 'approve_deposit') {
       const { txId } = body;
       if (!txId) return NextResponse.json({ error: 'txId is required' }, { status: 400 });

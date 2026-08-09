@@ -69,11 +69,28 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === 'google_login') {
-      const googleUsername = 'google_user_' + Math.random().toString(36).substring(2, 6);
-      let user = db.getUsers().find((u) => u.email.endsWith('@gmail.com') || u.username.startsWith('google_user_'));
+      const providedEmail = body.email;
+      
+      if (!providedEmail || typeof providedEmail !== 'string' || !providedEmail.includes('@')) {
+        return NextResponse.json({ error: 'Valid Google Gmail address is required for authentication' }, { status: 400 });
+      }
+
+      const cleanEmail = providedEmail.trim().toLowerCase();
+      let user = db.getUsers().find((u) => u.email.toLowerCase() === cleanEmail);
 
       if (!user) {
-        user = db.createUser(googleUsername, `${googleUsername}@gmail.com`);
+        // Generate clean username from email prefix or name
+        let baseUsername = cleanEmail.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '');
+        if (!baseUsername || baseUsername.length < 3) baseUsername = 'google_user';
+        
+        let targetUsername = baseUsername;
+        let counter = 1;
+        while (db.getUserByUsername(targetUsername)) {
+          targetUsername = `${baseUsername}_${counter}`;
+          counter++;
+        }
+
+        user = db.createUser(targetUsername, cleanEmail);
       }
 
       return NextResponse.json({
